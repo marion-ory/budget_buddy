@@ -1,0 +1,13 @@
+# Environnement virtuel
+.venv/
+venv/
+
+# Fichiers Python compilés
+__pycache__/
+*.pyc
+
+# Variables d'environnement (mots de passe, clés API...)
+.env
+
+# VSCode
+.vscode/
