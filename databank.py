@@ -66,5 +66,6 @@ curseur.execute("""
                 FOREIGN KEY (ID_Categorie) REFERENCES Categorie(ID)
                 )
                 """)
+
 curseur.close()
 cnx.close()
