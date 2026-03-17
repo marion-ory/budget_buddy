@@ -13,7 +13,7 @@ print("DataBank créée")
 
 # Connexion à la base de données
 curseur.execute("USE databank")
-# Création table
+# Création des tables
 curseur.execute("""
         CREATE TABLE IF NOT EXISTS User(
                 ID INT AUTO_INCREMENT PRIMARY KEY,
@@ -41,9 +41,15 @@ curseur.execute("""
 curseur.execute("""
         CREATE TABLE IF NOT EXISTS Categorie(
                 ID INT AUTO_INCREMENT PRIMARY KEY,
-                Nom VARCHAR(255)   
+                Nom VARCHAR(255) UNIQUE
                 )     
                 """)
+
+# Ajout des catégories automatiquement à la table Catégorie lors de création de la base de donnée
+categories = ["Alimentaire", "Vie quotidienne", "loisirs", "Véhicule", "Energie", "Logement", "Epargne"]
+for cat in categories:
+    curseur.execute("INSERT IGNORE INTO Categorie(Nom) VALUES(%s)",(cat,))
+cnx.commit()
 
 curseur.execute("""
         CREATE TABLE IF NOT EXISTS Transaction(
