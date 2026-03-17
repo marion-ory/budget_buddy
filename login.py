@@ -1,5 +1,5 @@
 import hashlib
-#from Engine import get_connection
+from Engine import get_connection
 
 code_banquier_attendu = "1234"
 
