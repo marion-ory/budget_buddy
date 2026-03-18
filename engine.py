@@ -27,10 +27,10 @@ class CompteBancaires:
                     solde -= t.montant
                 case "transfert":
                     # Si je(emetteur) passe le virement on soustrait le montant à mon compte (emetteur)
-                    if t.emetteur == self.user_id:
+                    if t.emetteur == self.id:
                         solde -= t.montant
                     # Si je (beneficiaire )== à mon user id alors on ajoute la somme
-                    elif t.beneficiaire == self.user_id:
+                    elif t.beneficiaire == self.id:
                         solde += t.montant
                 case _:
                     print(f"Type de transaction inconnu : {t.type}")
@@ -115,6 +115,26 @@ class Client(Users):
         mon_client.charger_transactions_client()
         solde_actuel = mon_client.calculer_solde()
         print(f"Votre solde actuel est de {solde_actuel} €")
+
+    def afficher_historique_tri(self, critere, dates=None):
+        donnees_triees = trier_par(self.id, critere, dates)
+        self.transaction = []
+
+        for ligne in donnees_triees:
+            trie = Transaction(
+                id=ligne["ID"],
+                categories=ligne["ID_Categorie"],
+                description=ligne["Description"],
+                montant=ligne["Montant"],
+                date=ligne["Date"],
+                type=ligne["Type"],
+                emetteur=ligne["ID_Emetteur"],
+                beneficiaire=ligne["ID_Beneficiaire"],
+                user_id=self.id,
+            )
+            self.transaction.append(t)
+
+        print(f"Historique rechargé et trié par : {critere}")
 
 
 class Banquier(Users):

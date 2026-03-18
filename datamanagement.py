@@ -92,13 +92,13 @@ def depot(id_compte, montant, date_op, description, id_cat):
             conn.close()
 
 
-def trier_par(critere, date=None):
+def trier_par(id_user, critere, date=None):
     conn = get_connection()
     if conn:
         try:
             curseur = conn.cursor(dictionnary=True)
-            requete = "SELECT * FROM Transaction"
-
+            requete = "SELECT * FROM Transaction WHERE ID_Emetteur= %s OR ID_Beneficiaire = %s"
+            # puisque dans la classe User accès pour le client et le banquier je dois chercher id a deux endroits
             match critere:
                 case "date_recent":
                     requete += " ORDER BY Date DESC"
@@ -116,16 +116,16 @@ def trier_par(critere, date=None):
                     requete += " ORDER BY Montant DESC"
 
                 case "fourchette_date":
-                    requete += " WHERE Date BETWEEN %s AND %s "
+                    requete += " AND Date BETWEEN %s AND %s "
 
                 case _:
                     return []
 
             if critere == "fourchette_date" and date:
-                curseur.execute(requete, date)
+                curseur.execute(requete, (id_user, date[0], date[1]))
             else:
 
-                curseur.execute(requete)
+                curseur.execute(requete, (id_user, id_user))
             resultats = curseur.fetchall()
             return resultats
 
@@ -140,7 +140,7 @@ def trier_par(critere, date=None):
 def recuperer_client_par_banquier(id_banquier):
     conn = get_connection()
 
-    curseur = conn.cursor(dictionary=True)
+    curseur = conn.cursor(dictionnary=True)
 
     requete = "SELECT * FROM User WHERE ID_banquier = %s "
     curseur.execute(requete, (id_banquier))
