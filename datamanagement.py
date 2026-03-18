@@ -6,7 +6,7 @@ def historique(id_utilisateur):
     conn = get_connection()
     if conn:
         try:
-            curseur = conn.cursor(dictionnary=True)  # pour Tkinter colonnes
+            curseur = conn.cursor(dictionnary=True)  # pour Tkinter colonnes affichage
 
             requete = "SELECT * FROM Transaction WHERE ID_Emetteur= %s OR  ID_Beneficiaire = %s ORDER BY Date DESC"
 

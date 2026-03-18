@@ -172,6 +172,17 @@ class Banquier(Users):
             self.client.append(nouveaux_clients)
         print(f"GESTION PORTEFEUILLE {len(self.client)} ")
 
+    def faire_depot_client(self, id_compte, description, montant, date_op, id_cat):
+        description_complete = f"{description} (Par Banquier {self.nom})"
+        print(
+            f"le Banquier {self.nom} a effectué un depot de {montant} € sur le compte {id_compte}"
+        )
+        depot(id_compte, montant, date_op, description_complete, id_cat)
+
+    def faire_retrait_client(self, id_compte, montant, description, id_cat, date_op):
+        description_complete = f"{description} (Par Banquier {self.nom})"
+        retrait(id_compte, montant, description_complete, id_cat, date_op)
+
 
 class Transaction:
     def __init__(
