@@ -1,5 +1,12 @@
 from config import *
-from datamanagement import historique, virement, retrait, depot, trier_par
+from datamanagement import (
+    historique,
+    virement,
+    retrait,
+    depot,
+    trier_par,
+    recuperer_client_par_banquier,
+)
 
 
 class CompteBancaires:
@@ -66,8 +73,8 @@ class Users:
 
 
 class Client(Users):
-    def __init__(self, id, nom, prenom, email, mdp, id_banquier):
-        super().__init__(id, nom, prenom, email, mdp, role="client")
+    def __init__(self, id, nom, prenom, email, mdp, adresse, id_banquier):
+        super().__init__(id, nom, prenom, email, mdp, adresse, role="client")
         self.id_banquier = id_banquier
 
     def faire_virement(self, montant, description, id_cat, date_op, id_beneficiaire):
@@ -126,6 +133,24 @@ class Banquier(Users):
 
     def modifier_user(self, user_id, nouvelles_infos):
         print(f"Modification de l'utilisateur {user_id} par le banquier.")
+
+    def charger_portefeuille(self):
+        clients_BDD = recuperer_client_par_banquier(self.id)
+        self.client = []
+
+        for ligne in clients_BDD:
+            nouveaux_clients = Client(
+                id=ligne["ID"],
+                nom=ligne["Nom"],
+                prenom=ligne["Prenom"],
+                mail=ligne["Email"],
+                adresse=ligne["Adresse"],
+                mdp="*****",  # securite
+                id_banquier=self.id,
+            )
+
+            self.client.append(nouveaux_clients)
+        print(f"GESTION PORTEFEUILLE {len(self.client)} ")
 
 
 class Transaction:

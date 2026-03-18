@@ -135,3 +135,17 @@ def trier_par(critere, date=None):
         finally:
             curseur.close()
             conn.close()
+
+
+def recuperer_client_par_banquier(id_banquier):
+    conn = get_connection()
+
+    curseur = conn.cursor(dictionary=True)
+
+    requete = "SELECT * FROM User WHERE ID_banquier = %s "
+    curseur.execute(requete, (id_banquier))
+    clients = curseur.fetchall()
+
+    curseur.close()
+    conn.close()
+    return clients
