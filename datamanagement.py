@@ -26,7 +26,9 @@ def recuperer_client_complet(id_user):
 
             for c in comptes_sql:
 
-                compte_obj = CompteBancaires(n["ID"], n["Solde"], n["Type"])
+                compte_obj = CompteBancaires(
+                    n["ID"], n["ID_User"], n["Solde"], n["Type"]
+                )
                 nouveau_client.ajouter_compte(compte_obj)
             return nouveau_client
         except Exception as e:

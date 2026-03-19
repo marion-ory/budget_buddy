@@ -13,8 +13,9 @@ class CompteBancaires:
     def __init__(self, id, user_id, typecompte, solde_initial):
         self.id = id
         self.user_id = user_id
-        self.typecompte = typecompte
         self.solde_initial = solde_initial
+        self.typecompte = typecompte
+
         self.transactions = []
 
     def calculer_solde(self):
@@ -62,20 +63,29 @@ class CompteBancaires:
 
 
 class Users:
-    def __init__(self, id, nom, prenom, mail, mdp, adresse, role):
+    def __init__(self, id, id_banquier, nom, prenom, mail, adresse, mdp, role):
         self.id = id
+        self.id_banquier = id_banquier
         self.nom = nom
         self.prenom = prenom
         self.mail = mail
-        self.mdp = mdp
         self.adresse = adresse
+        self.mdp = mdp
         self.role = role
 
+class Client(Users)
+    def __init__(self, id, id_banquier, nom, prenom, email, adresse, mdp):
 
-class Client(Users):
-    def __init__(self, id, nom, prenom, email, mdp, adresse, id_banquier):
-        super().__init__(id, nom, prenom, email, mdp, adresse, role="client")
-        self.id_banquier = id_banquier
+        super().__init__(
+            id,
+            id_banquier,
+            nom,
+            prenom,
+            email,
+            adresse,
+            mdp,
+            role="Client"
+        )
 
         self.comptes = []
         self.transactions = []
@@ -144,9 +154,20 @@ class Client(Users):
 
 
 class Banquier(Users):
-    def __init__(self, id, nom, prenom, email, mdp, titre):
-        super().__init__(id, nom, prenom, email, mdp, role="banquier")
+    def __init__(self, id, nom, prenom, email, adresse, mdp, titre):
+
+        super().__init__(
+            id,
+            None,
+            nom,
+            prenom,
+            email,
+            adresse,
+            mdp,
+            role="Banquier"
+        )
         self.titre = titre
+        self.clients_geres = []
 
     def faire_virement(
         self, id_emetteur, id_beneficaire, montant, id_cat, date_op, description
@@ -194,24 +215,24 @@ class Transaction:
     def __init__(
         self,
         id,
+        categories,
         description,
         montant,
         date,
+        type,
         emetteur,
         beneficiaire,
-        type,
-        user_id,
-        categories,
+        user_id=None
     ):
         self.id = id
+        self.categories = categories
         self.description = description
         self.montant = montant
         self.date = date
+        self.type = type
         self.emetteur = emetteur
         self.beneficiaire = beneficiaire
-        self.type = type
         self.user_id = user_id
-        self.categories = categories
 
     def __str__(self):
         return f"Le {self.type} d'un {self.montant} en date du {self.date} depuis le compte {self.emetteur} vers {self.beneficiaire}, dépense de {self.categories}"
