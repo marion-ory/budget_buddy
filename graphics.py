@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
-from Engine import get_connection
+# MODIFICATION : Import de config au lieu de Engine pour correspondre au reste de ton projet
+from config import get_connection
 
 # 1. GRAPHIQUE : RÉPARTITION DES DÉPENSES (CAMEMBERT)
 def creer_camembert_depenses(user_id):
