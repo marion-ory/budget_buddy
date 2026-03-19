@@ -115,7 +115,7 @@ class Users:
         self.mdp = mdp
         self.role = role
 
-class Client(Users)
+class Client(Users):
     def __init__(self, id, id_banquier, nom, prenom, email, adresse, mdp):
 
         super().__init__(
