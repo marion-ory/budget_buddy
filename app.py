@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from databank import setup_database
 from config import get_connection
+from pages.home import PageHome
 
 # 1. IMPORT DES PAGES
 from pages.auth import PageMenu, PageLogin, PageRegister
@@ -39,6 +40,8 @@ class BudgetBuddyApp(ctk.CTk):
         self.page_login = PageLogin(self)
         self.page_register = PageRegister(self)
         self.page_home = PageHome(self)
+        self.transactions_cc = []  # Liste vide par défaut pour éviter le crash
+        self.transactions_annexe = []
         self.page_history = PageHistory(self)
 
         self.show_page(self.page_menu)

@@ -7,7 +7,11 @@ def get_connection():
     """
     try:
         return mysql.connector.connect(
-            host="localhost", user="root", password="root", database="databank"
+            host="127.0.0.1",
+            user="root",
+            password="root",
+            database="databank",
+            port=3306,
         )
     except mysql.connector.Error as err:
         print(f"Erreur de connexion : {err}")

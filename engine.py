@@ -1,13 +1,15 @@
 from config import *
 import datetime
-from datamanagement import (
-    historique,
-    virement,
-    retrait,
-    depot,
-    trier_par,
-    recuperer_client_par_banquier,
-)
+
+# Imports déplacés dans les méthodes pour éviter l'ImportError
+# from datamanagement import (
+#     historique,
+#     virement,
+#     retrait,
+#     depot,
+#     trier_par,
+#     recuperer_client_par_banquier,
+# )
 
 
 class CompteBancaires:
@@ -53,12 +55,14 @@ class CompteBancaires:
                     return False
             case _:
                 return False
-#.        [ OPERATION DE DEBIT ET CREDIT SUR SOLDE DES COMPTES ]
-    def effectuer_transfert(self, montant, compte_destination, description= "Transfert"):
+
+    # .        [ OPERATION DE DEBIT ET CREDIT SUR SOLDE DES COMPTES ]
+    def effectuer_transfert(self, montant, compte_destination, description="Transfert"):
 
         if self.peut_faire_transfert(compte_destination.typecompte):
 
             if self.calculer_solde() >= montant:
+                from datamanagement import virement
 
                 succes = virement(
                     montant=montant,
@@ -66,7 +70,7 @@ class CompteBancaires:
                     id_cat=3,
                     date_op=datetime.date.today(),
                     id_emetteur=self.id,
-                    id_beneficiaire=compte_destination.id
+                    id_beneficiaire=compte_destination.id,
                 )
                 if succes:
                     print("Transfert autorisé et effectué.")
@@ -74,25 +78,44 @@ class CompteBancaires:
                     compte_destination.solde += montant
                 return True
             else:
-                    print("Solde insuffisant.")
+                print("Solde insuffisant.")
 
-    def effectuer_depot(self, montant, description ="Depot"):
-        if montant> 0:
-            succes= depot( id_compte= self.id, montant=montant,date_op=datetime.today(),description=description, id_cat=1 )
+    def effectuer_depot(self, montant, description="Depot"):
+        if montant > 0:
+            from datamanagement import depot
+
+            succes = depot(
+                id_compte=self.id,
+                montant=montant,
+                date_op=datetime.today(),
+                description=description,
+                id_cat=1,
+            )
 
             if succes:
                 print(f"Votre depot {montant} a été pris en compte")
                 self.solde += montant
+                from datamanagement import historique
+
+                historique(self.id_compte, "Dépôt", montant)
                 return True
             else:
                 print("Erreur, veuillez aller au guichet")
 
-    def effectuer_retrait(self, montant, description= "Retrait"):
-        if montant > 0 and montant< self.solde :
-            succes= retrait(id_compte=self.id, montant=montant, description=description, id_cat=2, date_op=datetime.today())
+    def effectuer_retrait(self, montant, description="Retrait"):
+        if montant > 0 and montant < self.solde:
+            from datamanagement import retrait
+
+            succes = retrait(
+                id_compte=self.id,
+                montant=montant,
+                description=description,
+                id_cat=2,
+                date_op=datetime.today(),
+            )
             if succes:
                 print(f"Votre retrait d'un montant de {montant} € a été pris en compte")
-                self.solde -=montant
+                self.solde -= montant
                 return True
             else:
                 print("Erreur technique lors du retrait.")
@@ -103,6 +126,7 @@ class CompteBancaires:
             else:
                 print("Le montant doit être supérieur à 0.")
             return False
+
 
 class Users:
     def __init__(self, id, id_banquier, nom, prenom, mail, adresse, mdp, role):
@@ -115,39 +139,41 @@ class Users:
         self.mdp = mdp
         self.role = role
 
+
 class Client(Users):
     def __init__(self, id, id_banquier, nom, prenom, email, adresse, mdp):
 
         super().__init__(
-            id,
-            id_banquier,
-            nom,
-            prenom,
-            email,
-            adresse,
-            mdp,
-            role="Client"
+            id, id_banquier, nom, prenom, email, adresse, mdp, role="Client"
         )
 
         self.comptes = []
         self.transactions = []
 
     def ajouter_compte(self, compte_obj):
-        self.comptes.append.(compte_obj)
+        self.comptes.append.compte_obj
 
     def faire_virement(self, montant, description, id_cat, date_op, id_beneficiaire):
         print(f"Demande de virement {montant} par {self.nom}")
+        from datamanagement import virement
+
         virement(montant, description, id_cat, date_op, self.id, id_beneficiaire)
 
     def faire_depot(self, montant, description, id_cat, date_op):
         print(f"Votre depot de {montant} € a été pris en compte")
+        from datamanagement import depot
+
         depot(self.id, montant, date_op, description, id_cat)
 
     def faire_retrait(self, montant, description, id_cat, date_op):
         print(f"Vous avez effectué un retrait de  {montant} €")
+        from datamanagement import retrait
+
         retrait(self.id, montant, description, id_cat, date_op)
 
     def charger_transactions_client(self):
+        from datamanagement import historique
+
         donnees_BDD = historique(self.id)
         self.transaction = []
 
@@ -175,6 +201,8 @@ class Client(Users):
         print(f"Votre solde actuel est de {solde_actuel} €")
 
     def afficher_historique_tri(self, critere, dates=None):
+        from datamanagement import trier_par
+
         donnees_triees = trier_par(self.id, critere, dates)
         self.transaction = []
 
@@ -190,7 +218,7 @@ class Client(Users):
                 beneficiaire=ligne["ID_Beneficiaire"],
                 user_id=self.id,
             )
-            self.transaction.append(t)
+            self.transaction.append(trie)
 
         print(f"Historique rechargé et trié par : {critere}")
 
@@ -198,25 +226,18 @@ class Client(Users):
 class Banquier(Users):
     def __init__(self, id, nom, prenom, email, adresse, mdp, titre):
 
-        super().__init__(
-            id,
-            None,
-            nom,
-            prenom,
-            email,
-            adresse,
-            mdp,
-            role="Banquier"
-        )
+        super().__init__(id, None, nom, prenom, email, adresse, mdp, role="Banquier")
         self.titre = titre
         self.clients_geres = []
 
     def faire_virement(
         self, id_emetteur, id_beneficaire, montant, id_cat, date_op, description
     ):
+        from datamanagement import virement
+
         # Le banquier a le privilège de choisir le compte émetteur (celui de ses clients)
         print(
-            f"Le banquier {self.nom} effectue un virement de {montant} depuis le compte {compte_emetteur} vers le beneficiaire {compte_dest}"
+            f"Le banquier {self.nom} effectue un virement de {montant} depuis le compte {id_emetteur} vers le beneficiaire {id_beneficaire}"
         )
         virement(montant, description, id_cat, date_op, id_emetteur, id_beneficaire)
 
@@ -224,6 +245,8 @@ class Banquier(Users):
         print(f"Modification de l'utilisateur {user_id} par le banquier.")
 
     def charger_portefeuille(self):
+        from datamanagement import recuperer_client_par_banquier
+
         clients_BDD = recuperer_client_par_banquier(self.id)
         self.client = []
 
@@ -242,6 +265,8 @@ class Banquier(Users):
         print(f"GESTION PORTEFEUILLE {len(self.client)} ")
 
     def faire_depot_client(self, id_compte, description, montant, date_op, id_cat):
+        from datamanagement import depot
+
         description_complete = f"{description} (Par Banquier {self.nom})"
         print(
             f"le Banquier {self.nom} a effectué un depot de {montant} € sur le compte {id_compte}"
@@ -249,6 +274,8 @@ class Banquier(Users):
         depot(id_compte, montant, date_op, description_complete, id_cat)
 
     def faire_retrait_client(self, id_compte, montant, description, id_cat, date_op):
+        from datamanagement import retrait
+
         description_complete = f"{description} (Par Banquier {self.nom})"
         retrait(id_compte, montant, description_complete, id_cat, date_op)
 
@@ -264,7 +291,7 @@ class Transaction:
         type,
         emetteur,
         beneficiaire,
-        user_id=None
+        user_id=None,
     ):
         self.id = id
         self.categories = categories

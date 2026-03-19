@@ -8,7 +8,7 @@ ERROR_RED = "#FF3B30"  # Rouge pour les retraits
 
 # Typographie (Utilise "Inter" si tu l'as, sinon "Segoe UI" ou "Arial")
 FONT_MAIN_BOLD = ("Segoe UI", 24, "bold")
-FONT_SUBTITLE = ("Segoe UI", 16, "bold")
+FONT_TITLE = ("Segoe UI", 16, "bold")
 FONT_BODY = ("Segoe UI", 13)
 FONT_MONEY = ("Segoe UI", 32, "bold")  # Pour le solde
 

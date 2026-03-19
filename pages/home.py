@@ -7,14 +7,14 @@ import datetime
 class PageHome(ctk.CTkFrame):
     def __init__(self, master):
         # On applique le fond noir profond du thème Revolut
-        super().__init__(master, fg_color=th.BG_COLOR)
+        super().__init__(master, fg_color=st.BG_COLOR)
         self.master = master
 
         # =========================================================
         # 1. ENTÊTE (Message de bienvenue)
         # =========================================================
         self.label_bienvenue = ctk.CTkLabel(
-            self, text="Bonjour,", font=th.FONT_TITLE, text_color=th.TEXT_WHITE
+            self, text="Bonjour,", font=st.FONT_TITLE, text_color=st.TEXT_WHITE
         )
         self.label_bienvenue.pack(pady=(30, 5), padx=25, anchor="w")
 
@@ -22,20 +22,20 @@ class PageHome(ctk.CTkFrame):
         # 2. CARTE DE SOLDE (Compte Courant)
         # =========================================================
         self.card_main = ctk.CTkFrame(
-            self, fg_color=th.CARD_BG, corner_radius=th.RADIUS
+            self, fg_color=st.CARD_BG, corner_radius=st.RADIUS
         )
         self.card_main.pack(pady=10, padx=20, fill="x")
 
         ctk.CTkLabel(
             self.card_main,
             text="Compte Courant",
-            font=th.FONT_SUB,
-            text_color=th.TEXT_GRAY,
+            font=st.FONT_TITLE,
+            text_color=st.TEXT_GRAY,
         ).pack(pady=(15, 0))
 
         # Ce label sera mis à jour par refresh_data()
         self.label_solde_cc = ctk.CTkLabel(
-            self.card_main, text="0.00 €", font=th.FONT_MONEY, text_color=th.TEXT_WHITE
+            self.card_main, text="0.00 €", font=st.FONT_MONEY, text_color=st.TEXT_WHITE
         )
         self.label_solde_cc.pack(pady=(0, 20))
 
@@ -43,20 +43,23 @@ class PageHome(ctk.CTkFrame):
         # 3. COMPTE ANNEXE (Affichage Épargne)
         # =========================================================
         self.card_annexe = ctk.CTkFrame(
-            self, fg_color=th.CARD_BG, corner_radius=th.RADIUS
+            self, fg_color=st.CARD_BG, corner_radius=st.RADIUS
         )
         self.card_annexe.pack(pady=5, padx=20, fill="x")
 
         self.label_annexe_titre = ctk.CTkLabel(
             self.card_annexe,
             text="Épargne Annexe",
-            font=th.FONT_SUB,
-            text_color=th.TEXT_GRAY,
+            font=st.FONT_TITLE,
+            text_color=st.TEXT_GRAY,
         )
         self.label_annexe_titre.pack(side="left", padx=20, pady=15)
 
         self.label_solde_annexe = ctk.CTkLabel(
-            self.card_annexe, text="0.00 €", font=th.FONT_SUB, text_color=th.TEXT_WHITE
+            self.card_annexe,
+            text="0.00 €",
+            font=st.FONT_TITLE,
+            text_color=st.TEXT_WHITE,
         )
         self.label_solde_annexe.pack(side="right", padx=20, pady=15)
 
@@ -67,11 +70,11 @@ class PageHome(ctk.CTkFrame):
             self,
             placeholder_text="0 €",
             height=60,
-            fg_color=th.CARD_BG,
-            border_color=th.CARD_BG,
-            text_color=th.TEXT_WHITE,
-            font=th.FONT_MONEY,
-            corner_radius=th.RADIUS,
+            fg_color=st.CARD_BG,
+            border_color=st.CARD_BG,
+            text_color=st.TEXT_WHITE,
+            font=st.FONT_MONEY,
+            corner_radius=st.RADIUS,
             justify="center",
         )
         self.entry_montant.pack(pady=20, padx=20, fill="x")
@@ -83,10 +86,10 @@ class PageHome(ctk.CTkFrame):
         self.btn_depot = ctk.CTkButton(
             btn_grid,
             text="Déposer",
-            fg_color=th.SUCCESS_GREEN,
+            fg_color=st.SUCCESS_GREEN,
             height=50,
-            corner_radius=th.RADIUS,
-            font=th.FONT_SUB,
+            corner_radius=st.RADIUS,
+            font=st.FONT_TITLE,
             command=self.action_depot,
         )
         self.btn_depot.grid(row=0, column=0, padx=5, sticky="ew")
@@ -94,10 +97,10 @@ class PageHome(ctk.CTkFrame):
         self.btn_retrait = ctk.CTkButton(
             btn_grid,
             text="Retirer",
-            fg_color=th.ERROR_RED,
+            fg_color=st.ERROR_RED,
             height=50,
-            corner_radius=th.RADIUS,
-            font=th.FONT_SUB,
+            corner_radius=st.RADIUS,
+            font=st.FONT_TITLE,
             command=self.action_retrait,
         )
         self.btn_retrait.grid(row=0, column=1, padx=5, sticky="ew")
@@ -107,10 +110,10 @@ class PageHome(ctk.CTkFrame):
         self.btn_virement = ctk.CTkButton(
             self,
             text="Virement vers l'Épargne",
-            fg_color=th.ACCENT_BLUE,
+            fg_color=st.ACCENT_BLUE,
             height=50,
-            corner_radius=th.RADIUS,
-            font=th.FONT_SUB,
+            corner_radius=st.RADIUS,
+            font=st.FONT_TITLE,
             command=self.action_virement,
         )
         self.btn_virement.pack(pady=10, padx=25, fill="x")
@@ -122,8 +125,8 @@ class PageHome(ctk.CTkFrame):
             self,
             text="📊 Voir l'historique des comptes",
             fg_color="transparent",
-            text_color=th.TEXT_WHITE,
-            hover_color=th.CARD_BG,
+            text_color=st.TEXT_WHITE,
+            hover_color=st.CARD_BG,
             command=lambda: master.show_page(master.page_history),
         )
         self.btn_history.pack(pady=(20, 0))
@@ -132,8 +135,8 @@ class PageHome(ctk.CTkFrame):
             self,
             text="Déconnexion",
             fg_color="transparent",
-            text_color=th.ERROR_RED,
-            hover_color=th.CARD_BG,
+            text_color=st.ERROR_RED,
+            hover_color=st.CARD_BG,
             command=lambda: master.show_page(master.page_menu),
         )
         self.btn_logout.pack(pady=10)
