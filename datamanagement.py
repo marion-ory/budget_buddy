@@ -1,9 +1,40 @@
 from config import *
-import engine
+from engine import Client, CompteBancaires
 from security import *
 from login import inscription, login
 
-# .                     [    IDENTIFICATION      ]
+#                      [    IDENTIFICATION      ]
+
+# ---------> Recuperation client complet :
+
+
+def recuperer_client_complet(id_user):
+    conn = get_connection()
+    if conn:
+        try:
+            curseur = conn.cursor(dictionary=True)
+            requete = "SELECT * FROM User WHERE ID =%s"
+            curseur.execute(requete, (id_user,))
+            n = curseur.fetchone()
+            if n:
+                nouveau_client = Client(
+                    n["ID"], n["Nom"], n["Prenom"], n["Email"], None, n["Adresse"]
+                )
+
+                curseur.execute("SELECT * FROM Compte WHERE ID_User = %s", (id_user,))
+                comptes_sql = curseur.fetchall()
+
+            for c in comptes_sql:
+
+                compte_obj = CompteBancaires(n["ID"], n["Solde"], n["Type"])
+                nouveau_client.ajouter_compte(compte_obj)
+            return nouveau_client
+        except Exception as e:
+            print("Erreur Profil Client incomplet")
+            conn.rollback()
+        finally:
+            curseur.close()
+            conn.close()
 
 
 # --------> Recuperation des comptes  Client et Banquier :

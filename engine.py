@@ -77,6 +77,12 @@ class Client(Users):
         super().__init__(id, nom, prenom, email, mdp, adresse, role="client")
         self.id_banquier = id_banquier
 
+        self.comptes = []
+        self.transactions = []
+
+    def ajouter_compte(self, compte_obj):
+        self.comptes.append.(compte_obj)
+
     def faire_virement(self, montant, description, id_cat, date_op, id_beneficiaire):
         print(f"Demande de virement {montant} par {self.nom}")
         virement(montant, description, id_cat, date_op, self.id, id_beneficiaire)

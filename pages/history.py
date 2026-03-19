@@ -43,6 +43,13 @@ class PageHistory(ctk.CTkFrame):
         #  compte courant
         self.show_compte_courant()
 
+    def refresh_data(self):
+        # """Appelée automatiquement par app.py lors de l'affichage de la page"""
+        # On s'assure que les transactions sont chargées depuis la BDD
+        if self.master.user_obj:
+            self.master.user_obj.charger_transactions_client()
+            self.show_compte_courant()
+
     def clear_scroll(self):
         for child in self.scroll.winfo_children():
             child.destroy()

@@ -67,3 +67,24 @@ class PageHome(ctk.CTkFrame):
             self.label_bienvenue.configure(
                 text=f"Bienvenue {user['prenom']} {user['nom']}"
             )
+
+
+def refresh_data(self):
+    """
+    C'est ici que la magie opère.
+    Cette fonction 'nettoie' et 'remplit' la page avec les vraies infos.
+    """
+    user = self.master.user_obj  # On récupère le client créé au login
+
+    if user:
+        # On met à jour le texte des labels existants
+        self.label_bienvenue.configure(text=f"Ravi de vous revoir, {user.prenom} !")
+
+        if user.comptes:
+            # On prend le premier compte (Courant)
+            solde_actuel = user.comptes[0].solde
+            self.label_solde.configure(text=f"{solde_actuel} €")
+        else:
+            self.label_solde.configure(text="Aucun compte")
+
+    print("DEBUG: Page Home rafraîchie avec les données BDD")

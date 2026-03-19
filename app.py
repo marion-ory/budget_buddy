@@ -15,6 +15,7 @@ from datamanagement import (
     virement,
     depot,
     retrait,
+    recuperer_client_complet,
 )
 from engine import Client, Banquier, CompteBancaires
 
@@ -51,6 +52,12 @@ class BudgetBuddyApp(ctk.CTk):
             self.page_history,
         ):
             p.pack_forget()
+
+        # --- LE REFRESH AUTOMATIQUE ---
+        # On vérifie si la page possède une fonction 'refresh_data'
+        if hasattr(page, "refresh_data"):
+            page.refresh_data()
+
         page.pack(fill="both", expand=True)
 
     # --- CONNEXION À LA VRAIE BDD ---
@@ -60,8 +67,8 @@ class BudgetBuddyApp(ctk.CTk):
 
         if user_info:
             self.current_user = user_info
-            # Ici, tu pourras appeler ta fonction pour charger les comptes
-            # self.charger_donnees_utilisateur()
+            self.user_obj = recuperer_client_complet(user_info["ID"])
+            self.page_home.refresh_data()
             return True
         return False
 
