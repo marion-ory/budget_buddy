@@ -1,4 +1,5 @@
 from config import *
+import datetime
 from datamanagement import (
     historique,
     virement,
@@ -52,15 +53,56 @@ class CompteBancaires:
                     return False
             case _:
                 return False
+#.        [ OPERATION DE DEBIT ET CREDIT SUR SOLDE DES COMPTES ]
+    def effectuer_transfert(self, montant, compte_destination, description= "Transfert"):
 
-    def effectuer_transfert(self, montant, compte_destination):
-        if self.peut_faire_transfert(montant, compte_destination.typecompte):
+        if self.peut_faire_transfert(compte_destination.typecompte):
+
             if self.calculer_solde() >= montant:
-                print("Transfert autorisé et effectué.")
-                # Ici, tu ajouteras la création de l'objet Transaction
-            else:
-                print("Solde insuffisant.")
 
+                succes = virement(
+                    montant=montant,
+                    description=description,
+                    id_cat=3,
+                    date_op=datetime.date.today(),
+                    id_emetteur=self.id,
+                    id_beneficiaire=compte_destination.id
+                )
+                if succes:
+                    print("Transfert autorisé et effectué.")
+                    self.solde -= montant
+                    compte_destination.solde += montant
+                return True
+            else:
+                    print("Solde insuffisant.")
+
+    def effectuer_depot(self, montant, description ="Depot"):
+        if montant> 0:
+            succes= depot( id_compte= self.id, montant=montant,date_op=datetime.today(),description=description, id_cat=1 )
+
+            if succes:
+                print(f"Votre depot {montant} a été pris en compte")
+                self.solde += montant
+                return True
+            else:
+                print("Erreur, veuillez aller au guichet")
+
+    def effectuer_retrait(self, montant, description= "Retrait"):
+        if montant > 0 and montant< self.solde :
+            succes= retrait(id_compte=self.id, montant=montant, description=description, id_cat=2, date_op=datetime.today())
+            if succes:
+                print(f"Votre retrait d'un montant de {montant} € a été pris en compte")
+                self.solde -=montant
+                return True
+            else:
+                print("Erreur technique lors du retrait.")
+                return False
+        else:
+            if montant > self.solde:
+                print("Solde Insuffisant pour ce retrait.")
+            else:
+                print("Le montant doit être supérieur à 0.")
+            return False
 
 class Users:
     def __init__(self, id, id_banquier, nom, prenom, mail, adresse, mdp, role):

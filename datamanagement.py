@@ -112,17 +112,21 @@ def retrait(id_compte, montant, description, id_cat, date_op):
     conn = get_connection()
     if conn:
         try:
-            curseur = conn.cursor(dictionnary=True)
+            curseur = conn.cursor(dictionary=True)
+
+            # DEBIT
+            requete_debit = "UPDATE Compte SET Solde = Solde - %s WHERE ID =%s"
+            curseur.execute(requete_debit, (montant, id_compte))
 
             # On définit la requête (6 colonnes au total)
             requete = "INSERT INTO Transaction (ID_Emetteur, Date, Montant, Description, Type, ID_Categorie) VALUES (%s, %s, %s, %s, 'Retrait', %s)"
 
-            # On aligne les valeurs EXACTEMENT sur l'ordre des colonnes ci-dessus
             valeurs = (id_compte, date_op, montant, description, id_cat)
 
             curseur.execute(requete, valeurs)
             conn.commit()
-            print("Retrait Effectué")
+            print(f"Retrait de {montant}€ effectué sur le compte {id_compte}")
+            return True
 
         except Exception as e:
             print(f"Oups, une erreur : {e}")
@@ -136,9 +140,21 @@ def virement(montant, description, id_cat, date_op, id_emetteur, id_beneficiaire
     conn = get_connection()
     if conn:
         try:
-            curseur = conn.cursor(dictionnary=True)
+            curseur = conn.cursor(dictionary=True)
 
-            requete = "INSERT INTO Transaction (ID_Emetteur,Date, Montant, Description, Type, ID_Categorie, ID_beneficiaire) VALUES (%s,%s, %s, %s, 'Virement', %s,%s)"
+            # on retire l argent DEBIT
+
+            requete_debit = "UPDATE Compte SET Solde = Solde - %s WHERE ID =%s"
+            curseur.execute(requete_debit, (montant, id_emetteur))
+
+            # on donne l argent CREDIT
+
+            requete_credit = " UPDATE Compte SET Solde = Solde + %s WHERE ID= %s"
+            curseur.execute(requete_credit, (montant, id_beneficiaire))
+
+            # on le note
+
+            requete = "INSERT INTO Transaction (ID_Emetteur,Date, Montant, Description, Type, ID_Categorie, ID_beneficiaire) VALUES (%s,%s, %s, %s, 'Transfert', %s,%s)"
             valeurs = (
                 id_emetteur,
                 date_op,
@@ -163,14 +179,18 @@ def depot(id_compte, montant, date_op, description, id_cat):
     conn = get_connection()
     if conn:
         try:
-            curseur = conn.cursor(dictionnary=True)
+            curseur = conn.cursor(dictionary=True)
+
+            requete_credit = " UPDATE Compte SET Solde = Solde + %s WHERE ID= %s"
+            curseur.execute(requete_credit, (montant, id_compte))
 
             requete = "INSERT INTO Transaction (ID_Beneficiaire, Montant, Date, Description, ID_categorie, Type) VALUES (%s,%s,%s,%s,%s,'Depot')"
             valeurs = (id_compte, montant, date_op, description, id_cat)
 
             curseur.execute(requete, valeurs)
             conn.commit()
-            print("Votre Depot a été pris en compte")
+            print(f"Dépôt de {montant}€ effectué sur le compte {id_compte}")
+            return True
         except Exception as e:
             print("Une erreur est survenue, Veuillez réessayer plus tard")
             conn.rollback()
