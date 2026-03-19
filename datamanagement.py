@@ -1,5 +1,59 @@
 from config import *
 import engine
+from security import *
+from login import inscription, login
+
+# .                     [    IDENTIFICATION      ]
+
+
+# --------> Recuperation des comptes  Client et Banquier :
+
+
+def charger_comptes_utilisateurs(id_user):
+    conn = get_connection()
+    if conn:
+        try:
+            curseur = conn.cursor(dictionary=True)
+            requete = "SELECT * FROM Compte WHERE ID = %s"
+            curseur.execute(
+                requete(
+                    id_user,
+                )
+            )
+            listes_comptes = curseur.fetchall()  # recupere la liste de compte
+        except Exception as e:
+            print("Erreur de chargement des comptes")
+            conn.rollback()
+            return []  # liste vide si le chargement ne se fait pas
+        finally:
+            curseur.close()
+            conn.close()
+
+
+# ----------> Recuperation portefeuille Banquier :
+
+
+def recuperer_portefeuille_banquier(id_banquier):
+    conn = get_connection()
+    if conn:
+        try:
+            curseur = conn.cursor(dictonary=True)
+            requete = "SELECT * FROM User WHERE ID_Banquier =%s"
+            curseur.execute(
+                requete(
+                    id_banquier,
+                )
+            )
+            return curseur.fetchall()
+        except Exception as e:
+            print("Erreur chargement du Portefeuille Client")
+            conn.rollback()
+        finally:
+            curseur.close()
+            conn.close()
+
+
+# .                      [     OPERATIONS       ]
 
 
 def historique(id_utilisateur):
