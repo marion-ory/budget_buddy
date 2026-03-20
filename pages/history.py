@@ -62,7 +62,6 @@ class PageHistory(ctk.CTkFrame):
         user = self.master.user_obj
         if user:
             # On force le rechargement depuis la BDD
-            user.charger_transactions_client()
             self.show_compte_courant()
 
     def show_compte_courant(self):
