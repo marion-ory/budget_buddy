@@ -61,11 +61,7 @@ def charger_comptes_utilisateurs(id_user):
         try:
             curseur = conn.cursor(dictionary=True)
             requete = "SELECT * FROM Compte WHERE ID = %s"
-            curseur.execute(
-                requete(
-                    id_user,
-                )
-            )
+            curseur.execute(requete, (id_user,))
             listes_comptes = curseur.fetchall()  # recupere la liste de compte
         except Exception as e:
             print("Erreur de chargement des comptes")
@@ -106,7 +102,7 @@ def historique(id_utilisateur):
     conn = get_connection()
     if conn:
         try:
-            curseur = conn.cursor(dictionnary=True)  # pour Tkinter colonnes affichage
+            curseur = conn.cursor(dictionary=True)  # pour Tkinter colonnes affichage
 
             requete = "SELECT * FROM Transaction WHERE ID_Emetteur= %s OR  ID_Beneficiaire = %s ORDER BY Date DESC"
 
@@ -216,7 +212,7 @@ def trier_par(id_user, critere, date=None):
     conn = get_connection()
     if conn:
         try:
-            curseur = conn.cursor(dictionnary=True)
+            curseur = conn.cursor(dictionary=True)
             requete = "SELECT * FROM Transaction WHERE ID_Emetteur= %s OR ID_Beneficiaire = %s"
             # puisque dans la classe User accès pour le client et le banquier je dois chercher id a deux endroits
             match critere:
@@ -260,7 +256,7 @@ def trier_par(id_user, critere, date=None):
 def recuperer_client_par_banquier(id_banquier):
     conn = get_connection()
 
-    curseur = conn.cursor(dictionnary=True)
+    curseur = conn.cursor(dictionary=True)
 
     requete = "SELECT * FROM User WHERE ID_banquier = %s "
     curseur.execute(requete, (id_banquier))

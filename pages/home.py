@@ -147,63 +147,117 @@ class PageHome(ctk.CTkFrame):
 
     def action_depot(self):
         try:
-            montant = float(self.entry_montant.get())
-            if self.master.user_obj.comptes[0].effectuer_depot(montant):
-                self.refresh_data()
-                self.entry_montant.delete(0, "end")
-                messagebox.showinfo("Succès", f"Dépôt de {montant}€ effectué.")
-        except ValueError:
-            messagebox.showerror("Erreur", "Veuillez entrer un montant valide")
+            montant_str = self.entry_montant.get()
+            if not montant_str:
+                return messagebox.showwarning(
+                    "Attention", "Veuillez saisir un montant."
+                )
 
-    def action_retrait(self):
-        try:
-            montant = float(self.entry_montant.get())
-            if self.master.user_obj.comptes[0].effectuer_retrait(montant):
+            montant = float(montant_str)
+            if montant <= 0:
+                return messagebox.showerror(
+                    "Erreur", "Le montant doit être supérieur à 0€"
+                )
+
+            # On récupère le compte courant de l'utilisateur
+            user = self.master.user_obj
+            compte_courant = user.comptes[0]
+
+            # On lance l'opération (qui va elle-même appeler le SQL via engine.py)
+            if compte_courant.effectuer_depot(montant):
+                # Si ça a marché, on rafraîchit l'affichage
                 self.refresh_data()
                 self.entry_montant.delete(0, "end")
-                messagebox.showinfo("Succès", f"Retrait de {montant}€ effectué.")
+                messagebox.showinfo("Succès", f"Dépôt de {montant:.2f}€ effectué.")
             else:
-                messagebox.showwarning("Refusé", "Solde insuffisant.")
+                messagebox.showerror(
+                    "Erreur", "L'opération a échoué en base de données."
+                )
+
         except ValueError:
-            messagebox.showerror("Erreur", "Veuillez entrer un montant valide")
+            messagebox.showerror("Erreur", "Veuillez entrer un nombre valide.")
 
     def action_virement(self):
         try:
-            montant = float(self.entry_montant.get())
+            montant_str = self.entry_montant.get()
+            if not montant_str:
+                return messagebox.showwarning("Attention", "Saisissez un montant")
+
+            montant = float(montant_str)
             user = self.master.user_obj
+
+            # On vérifie qu'il y a bien deux comptes
             if len(user.comptes) > 1:
-                # Appel du RAPPEL ENGINE.PY pour le transfert
+                # On transfère du Courant (0) vers l'Épargne (1)
                 if user.comptes[0].effectuer_transfert(montant, user.comptes[1]):
-                    self.refresh_data()
+                    self.refresh_data()  # TRÈS IMPORTANT : met à jour les DEUX labels
                     self.entry_montant.delete(0, "end")
                     messagebox.showinfo(
-                        "Virement", "L'argent a été transféré vers l'épargne."
+                        "Virement", f"Virement de {montant:.2f}€ réussi !"
+                    )
+                else:
+                    messagebox.showwarning(
+                        "Refusé", "Solde insuffisant pour ce virement."
                     )
             else:
-                messagebox.showerror("Erreur", "Aucun compte épargne trouvé.")
+                messagebox.showerror("Erreur", "Vous n'avez pas de compte épargne.")
         except ValueError:
-            messagebox.showerror("Erreur", "Montant invalide")
+            messagebox.showerror("Erreur", "Veuillez entrer un nombre valide.")
+
+    def action_retrait(self):
+        try:
+            montant_str = self.entry_montant.get()
+            if not montant_str:
+                return messagebox.showwarning(
+                    "Attention", "Veuillez saisir un montant."
+                )
+
+            montant = float(montant_str)
+            user = self.master.user_obj
+            compte_courant = user.comptes[0]
+
+            # On appelle la méthode de engine.py
+            if compte_courant.effectuer_retrait(montant):
+                self.refresh_data()
+                self.entry_montant.delete(0, "end")
+                messagebox.showinfo("Succès", f"Retrait de {montant:.2f}€ effectué.")
+            else:
+                # Le message d'erreur spécifique (solde insuffisant) est déjà géré par les print
+                # dans engine, mais on peut ajouter un message ici aussi.
+                messagebox.showwarning(
+                    "Refusé",
+                    "Opération impossible (solde insuffisant ou montant invalide).",
+                )
+
+        except ValueError:
+            messagebox.showerror("Erreur", "Veuillez entrer un nombre valide.")
 
     def refresh_data(self):
-        """Met à jour l'affichage avec les données réelles de l'objet Client"""
-        # On récupère l'objet Client stocké dans l'app
         user = self.master.user_obj
+        if not user:
+            return
 
-        if user:
-            # 1. Message de bienvenue (Accès par attribut .prenom)
-            self.label_bienvenue.configure(text=f"Bonjour {user.prenom},")
+        # 1. Gestion du Prénom (Déjà OK)
+        prenom = (
+            getattr(user, "prenom", "Client")
+            if not isinstance(user, dict)
+            else user.get("Prenom", "Client")
+        )
+        self.label_bienvenue.configure(text=f"Bonjour {prenom},")
 
-            # 2. Mise à jour des soldes via la liste de comptes de l'objet
-            # On vérifie qu'il a au moins un compte (le courant)
-            if len(user.comptes) > 0:
-                solde_cc = user.comptes[0].solde
-                self.label_solde_cc.configure(text=f"{solde_cc:.2f} €")
+        # 2. Mise à jour des soldes
+        try:
+            if hasattr(user, "comptes") and len(user.comptes) > 0:
+                # Compte Courant (Index 0)
+                self.label_solde_cc.configure(text=f"{user.comptes[0].solde:.2f} €")
 
-            # 3. Mise à jour du compte épargne (s'il existe)
-            if len(user.comptes) > 1:
-                solde_annexe = user.comptes[1].solde
-                self.label_solde_annexe.configure(text=f"{solde_annexe:.2f} €")
-            else:
-                self.label_solde_annexe.configure(text="Aucun compte")
+                # Compte Épargne (Index 1) - SI IL EXISTE
+                if len(user.comptes) > 1:
+                    self.label_solde_annexe.configure(
+                        text=f"{user.comptes[1].solde:.2f} €"
+                    )
+                else:
+                    self.label_solde_annexe.configure(text="Pas de compte")
 
-        print("DEBUG: Dashboard rafraîchi avec les objets réels")
+        except Exception as e:
+            print(f"DEBUG: Erreur affichage soldes : {e}")

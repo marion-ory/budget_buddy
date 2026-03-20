@@ -43,7 +43,6 @@ def setup_database():
         """
         )
 
-        # (Les autres tables restent identiques, je raccourcis pour la clarté)
         curseur.execute(
             "CREATE TABLE IF NOT EXISTS Compte (ID INT AUTO_INCREMENT PRIMARY KEY, ID_User INT, Solde DECIMAL(15,2), Type ENUM('Courant', 'Annexe'), FOREIGN KEY (ID_User) REFERENCES User(ID))"
         )
@@ -68,7 +67,6 @@ def setup_database():
             curseur.execute("INSERT IGNORE INTO Categorie(Nom) VALUES(%s)", (cat,))
 
         # --- INSERTION DES BANQUIERS ---
-        # Note : On calcule le hash directement dans la liste en utilisant l'email comme SEL
         banquiers_data = [
             (
                 "Lupin",
@@ -103,7 +101,6 @@ def setup_database():
             ID_Banquier2 = banquiers[1][0]
 
             # --- INSERTION DES CLIENTS ---
-            # IMPORTANT : On applique securite_mdp(mdp, email) pour chaque client
             clients_raw = [
                 (
                     "Michel",
@@ -123,7 +120,6 @@ def setup_database():
                     "Client",
                     ID_Banquier1,
                 ),
-                # ... ajoute les autres ici sur le même modèle ...
                 (
                     "Mercier",
                     "Lucas",
@@ -136,12 +132,58 @@ def setup_database():
             ]
 
             for c in clients_raw:
-                # On hache le MDP avec l'email avant d'insérer
                 mdp_hache = securite_mdp(c[4], c[2])
                 donnees_finales = (c[0], c[1], c[2], c[3], mdp_hache, c[5], c[6])
                 curseur.execute(query_user, donnees_finales)
 
             cnx.commit()
+
+            # --- NOUVEAU : INSERTION DES COMPTES AVEC SOLDES DIFFÉRENTS ---
+
+            # On définit les soldes par email pour la précision
+            soldes_personnalises = {
+                "michel.rostain@laplateforme.io": {
+                    "Courant": 1250.50,
+                    "Annexe": 5000.00,
+                },
+                "durand.marie@mail.com": {"Courant": 2100.00, "Annexe": 150.00},
+                "l.mercier@mail.com": {"Courant": 45.30, "Annexe": 12000.00},
+            }
+
+            # On récupère tous les clients pour créer leurs comptes
+            curseur.execute("SELECT ID, Email FROM User WHERE Role = 'Client'")
+            clients = curseur.fetchall()
+
+            for client_id, email in clients:
+                # On récupère les montants prévus, sinon valeurs par défaut
+                montants = soldes_personnalises.get(
+                    email, {"Courant": 0.0, "Annexe": 0.0}
+                )
+
+                # Création Compte Courant
+                curseur.execute(
+                    "SELECT ID FROM Compte WHERE ID_User = %s AND Type = 'Courant'",
+                    (client_id,),
+                )
+                if not curseur.fetchone():
+                    curseur.execute(
+                        "INSERT INTO Compte (ID_User, Solde, Type) VALUES (%s, %s, 'Courant')",
+                        (client_id, montants["Courant"]),
+                    )
+
+                # Création Compte Annexe
+                curseur.execute(
+                    "SELECT ID FROM Compte WHERE ID_User = %s AND Type = 'Annexe'",
+                    (client_id,),
+                )
+                if not curseur.fetchone():
+                    curseur.execute(
+                        "INSERT INTO Compte (ID_User, Solde, Type) VALUES (%s, %s, 'Annexe')",
+                        (client_id, montants["Annexe"]),
+                    )
+
+            cnx.commit()
+            print("Clients et comptes (soldes différenciés) initialisés.")
 
         print("Base de données initialisée avec succès avec hachage sécurisé.")
         curseur.close()
@@ -149,3 +191,7 @@ def setup_database():
 
     except mysql.connector.Error as err:
         print(f"Erreur lors de l'initialisation : {err}")
+
+
+if __name__ == "__main__":
+    setup_database()

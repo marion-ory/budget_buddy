@@ -13,40 +13,37 @@ import datetime
 
 
 class CompteBancaires:
-    def __init__(self, id, user_id, typecompte, solde_initial):
+    def __init__(self, id, user_id, solde, typecompte):
         self.id = id
         self.user_id = user_id
-        self.solde_initial = solde_initial
+        self.solde = solde
         self.typecompte = typecompte
-
         self.transactions = []
 
     def calculer_solde(self):
-        solde = self.solde_initial
+        # On part du solde enregistré en BDD (ou 0 si tu préfères tout recalculer)
+        solde_temporaire = self.solde
+
         for t in self.transactions:
-            match t.type:
-                case "depot":
-                    solde += t.montant
-                case "retrait":
-                    solde -= t.montant
-                case "transfert":
-                    # Si je(emetteur) passe le virement on soustrait le montant à mon compte (emetteur)
-                    if t.emetteur == self.id:
-                        solde -= t.montant
-                    # Si je (beneficiaire )== à mon user id alors on ajoute la somme
-                    elif t.beneficiaire == self.id:
-                        solde += t.montant
-                case _:
-                    print(f"Type de transaction inconnu : {t.type}")
-        return solde
+            if t.type == "Depot":
+                solde_temporaire += t.montant
+            elif t.type == "Retrait":
+                solde_temporaire -= t.montant
+            elif t.type == "Transfert":
+                if t.emetteur == self.id:
+                    solde_temporaire -= t.montant
+                elif t.beneficiaire == self.id:
+                    solde_temporaire += t.montant
+
+        return solde_temporaire
 
     def peut_faire_transfert(self, destination_type):
 
         match self.typecompte:
-            case "courant":
+            case "Courant":
                 return True
-            case "annexe":
-                if destination_type == "courant":  # uniquement vers compte courant
+            case "Annexe":
+                if destination_type == "Courant":  # uniquement vers compte courant
                     return True
                 else:
                     print(
@@ -87,7 +84,7 @@ class CompteBancaires:
             succes = depot(
                 id_compte=self.id,
                 montant=montant,
-                date_op=datetime.today(),
+                date_op=datetime.date.today(),
                 description=description,
                 id_cat=1,
             )
@@ -103,7 +100,7 @@ class CompteBancaires:
                 print("Erreur, veuillez aller au guichet")
 
     def effectuer_retrait(self, montant, description="Retrait"):
-        if montant > 0 and montant < self.solde:
+        if montant > 0 and montant <= self.solde:
             from datamanagement import retrait
 
             succes = retrait(
@@ -111,7 +108,7 @@ class CompteBancaires:
                 montant=montant,
                 description=description,
                 id_cat=2,
-                date_op=datetime.today(),
+                date_op=datetime.date.today(),
             )
             if succes:
                 print(f"Votre retrait d'un montant de {montant} € a été pris en compte")
@@ -151,7 +148,7 @@ class Client(Users):
         self.transactions = []
 
     def ajouter_compte(self, compte_obj):
-        self.comptes.append.compte_obj
+        self.comptes.append(compte_obj)
 
     def faire_virement(self, montant, description, id_cat, date_op, id_beneficiaire):
         print(f"Demande de virement {montant} par {self.nom}")
@@ -307,10 +304,10 @@ class Transaction:
         return f"Le {self.type} d'un {self.montant} en date du {self.date} depuis le compte {self.emetteur} vers {self.beneficiaire}, dépense de {self.categories}"
 
     def traiter_operations(type, montant_actuel, montant_operation):
-        if type == "retrait":
+        if type == "Retrait":
             return montant_actuel - montant_operation
-        elif type == "depot":
+        elif type == "Depot":
             return montant_actuel + montant_operation
-        elif type == "transfert":
+        elif type == "Transfert":
             pass
             return montant_actuel
