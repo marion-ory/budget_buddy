@@ -103,8 +103,8 @@ def setup_database():
             # --- INSERTION DES CLIENTS ---
             clients_raw = [
                 (
-                    "Michel",
                     "Rostain",
+                    "Michel",
                     "michel.rostain@laplateforme.io",
                     "43 rue Neuve Sainte Catherine, 13007 Marseille",
                     "azerty",

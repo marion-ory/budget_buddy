@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from datetime import datetime
 
 # On importe tes styles depuis setting.py
 from setting import (
@@ -7,8 +8,6 @@ from setting import (
     ACCENT_BLUE,
     TEXT_WHITE,
     TEXT_GRAY,
-    SUCCESS_GREEN,
-    FONT_MAIN_BOLD,
     FONT_TITLE,
     FONT_BODY,
     FONT_MONEY,
@@ -17,44 +16,70 @@ from setting import (
 )
 
 
-# RETOUR À LA CLASSE CLASSIQUE (Plus d'erreur de Canvas)
+# --- FENÊTRE PERSONNALISÉE : VIREMENT PAR NOM/PRÉNOM ---
+class VirementExterneDialog(ctk.CTkToplevel):
+    def __init__(self, master, callback):
+        super().__init__(master)
+        self.title("Nouveau Virement")
+        self.geometry("350x350")
+        self.callback = callback
+        self.configure(fg_color=BG_COLOR)
+
+        # On force la fenêtre au premier plan et on bloque l'arrière
+        self.attributes("-topmost", True)
+        self.grab_set()
+
+        ctk.CTkLabel(self, text="Bénéficiaire Externe", font=FONT_TITLE).pack(pady=20)
+
+        self.entry_nom = ctk.CTkEntry(
+            self, placeholder_text="Nom du destinataire", width=220
+        )
+        self.entry_nom.pack(pady=10)
+
+        self.entry_prenom = ctk.CTkEntry(
+            self, placeholder_text="Prénom du destinataire", width=220
+        )
+        self.entry_prenom.pack(pady=10)
+
+        self.entry_mt = ctk.CTkEntry(self, placeholder_text="Montant (€)", width=220)
+        self.entry_mt.pack(pady=10)
+
+        self.btn_valider = ctk.CTkButton(
+            self,
+            text="Envoyer l'argent",
+            fg_color=ACCENT_BLUE,
+            height=40,
+            command=self.clic_envoyer,
+        )
+        self.btn_valider.pack(pady=25)
+
+    def clic_envoyer(self):
+        nom = self.entry_nom.get().strip()
+        prenom = self.entry_prenom.get().strip()
+        montant = self.entry_mt.get().strip()
+
+        if nom and prenom and montant:
+            print(f"DEBUG: Envoi des données {nom} {prenom} {montant}€")
+            self.callback(nom, prenom, montant)
+            self.destroy()
+        else:
+            print("DEBUG: Formulaire incomplet")
+
+
+# --- PAGE ACCUEIL PRINCIPALE ---
 class PageHome(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master, fg_color=BG_COLOR)
+        self.master = master
 
-        # --- EN-TÊTE / BIENVENUE ---
+        # --- EN-TÊTE ---
         self.label_bienvenue = ctk.CTkLabel(
             self, text="Bonjour,", font=FONT_TITLE, text_color=TEXT_GRAY
         )
         self.label_bienvenue.pack(pady=(30, 5), padx=30, anchor="w")
 
-        # --- CARTE DU COMPTE COURANT ---
-        self.card_cc = ctk.CTkFrame(self, fg_color=CARD_BG, corner_radius=RADIUS)
-        self.card_cc.pack(pady=10, padx=20, fill="x")
-
-        self.label_titre_cc = ctk.CTkLabel(
-            self.card_cc, text="Compte Courant", font=FONT_BODY, text_color=TEXT_GRAY
-        )
-        self.label_titre_cc.pack(pady=(15, 0), padx=20, anchor="w")
-
-        self.label_solde_cc = ctk.CTkLabel(
-            self.card_cc, text="0.00 €", font=FONT_MONEY, text_color=TEXT_WHITE
-        )
-        self.label_solde_cc.pack(pady=(5, 20), padx=20, anchor="w")
-
-        # --- CARTE DU COMPTE ANNEXE ---
-        self.card_annexe = ctk.CTkFrame(self, fg_color=CARD_BG, corner_radius=RADIUS)
-        self.card_annexe.pack(pady=10, padx=20, fill="x")
-
-        self.label_titre_annexe = ctk.CTkLabel(
-            self.card_annexe, text="Compte Annexe", font=FONT_BODY, text_color=TEXT_GRAY
-        )
-        self.label_titre_annexe.pack(pady=(15, 0), padx=20, anchor="w")
-
-        self.label_solde_annexe = ctk.CTkLabel(
-            self.card_annexe, text="0.00 €", font=FONT_TITLE, text_color=ACCENT_BLUE
-        )
-        self.label_solde_annexe.pack(pady=(5, 15), padx=20, anchor="w")
+        # --- CARTES DE SOLDES ---
+        self._creer_cartes_soldes()
 
         # --- GRILLE DE BOUTONS D'ACTION ---
         self.frame_actions = ctk.CTkFrame(self, fg_color="transparent")
@@ -65,43 +90,42 @@ class PageHome(ctk.CTkFrame):
             "hover_color": "#0056b3",
             "height": BTN_HEIGHT,
             "corner_radius": RADIUS,
+            "width": 160,
         }
 
-        self.btn_depot = ctk.CTkButton(
-            self.frame_actions,
-            text="➕ Dépôt",
-            width=150,
-            **btn_style,
-            command=self.ouvrir_depot,
-        )
-        self.btn_depot.grid(row=0, column=0, padx=10, pady=10)
-
-        self.btn_retrait = ctk.CTkButton(
+        # Ligne 1 : Dépôt / Retrait
+        ctk.CTkButton(
+            self.frame_actions, text="➕ Dépôt", command=self.ouvrir_depot, **btn_style
+        ).grid(row=0, column=0, padx=10, pady=10)
+        ctk.CTkButton(
             self.frame_actions,
             text="➖ Retrait",
-            width=150,
-            **btn_style,
             command=self.ouvrir_retrait,
-        )
-        self.btn_retrait.grid(row=0, column=1, padx=10, pady=10)
-
-        self.btn_virement = ctk.CTkButton(
-            self.frame_actions,
-            text="💸 Virement",
-            width=150,
             **btn_style,
-            command=self.ouvrir_virement,
-        )
-        self.btn_virement.grid(row=1, column=0, padx=10, pady=10)
+        ).grid(row=0, column=1, padx=10, pady=10)
 
+        # Ligne 2 : Virement Interne / Virement Externe
+        ctk.CTkButton(
+            self.frame_actions,
+            text="🔄 Vir. Interne",
+            command=self.ouvrir_virement,
+            **btn_style,
+        ).grid(row=1, column=0, padx=10, pady=10)
+        ctk.CTkButton(
+            self.frame_actions,
+            text="💸 Vir. Externe",
+            command=self.ouvrir_virement_externe,
+            **btn_style,
+        ).grid(row=1, column=1, padx=10, pady=10)
+
+        # Ligne 3 : Historique
         self.btn_history = ctk.CTkButton(
             self.frame_actions,
             text="📜 Historique",
-            width=150,
             **btn_style,
             command=lambda: self.master.show_page(self.master.page_history),
         )
-        self.btn_history.grid(row=1, column=1, padx=10, pady=10)
+        self.btn_history.grid(row=2, column=0, columnspan=2, pady=10)
 
         # Bouton Déconnexion
         self.btn_logout = ctk.CTkButton(
@@ -110,118 +134,103 @@ class PageHome(ctk.CTkFrame):
             fg_color="transparent",
             text_color=TEXT_GRAY,
             hover_color="#333333",
-            height=30,
             command=lambda: self.master.show_page(self.master.page_menu),
         )
         self.btn_logout.pack(side="bottom", pady=20)
 
+    def _creer_cartes_soldes(self):
+        # Compte Courant
+        self.card_cc = ctk.CTkFrame(self, fg_color=CARD_BG, corner_radius=RADIUS)
+        self.card_cc.pack(pady=10, padx=20, fill="x")
+        ctk.CTkLabel(
+            self.card_cc, text="Compte Courant", font=FONT_BODY, text_color=TEXT_GRAY
+        ).pack(pady=(15, 0), padx=20, anchor="w")
+        self.label_solde_cc = ctk.CTkLabel(
+            self.card_cc, text="0.00 €", font=FONT_MONEY, text_color=TEXT_WHITE
+        )
+        self.label_solde_cc.pack(pady=(5, 20), padx=20, anchor="w")
+
+        # Compte Annexe
+        self.card_annexe = ctk.CTkFrame(self, fg_color=CARD_BG, corner_radius=RADIUS)
+        self.card_annexe.pack(pady=10, padx=20, fill="x")
+        ctk.CTkLabel(
+            self.card_annexe, text="Compte Annexe", font=FONT_BODY, text_color=TEXT_GRAY
+        ).pack(pady=(15, 0), padx=20, anchor="w")
+        self.label_solde_annexe = ctk.CTkLabel(
+            self.card_annexe, text="0.00 €", font=FONT_TITLE, text_color=ACCENT_BLUE
+        )
+        self.label_solde_annexe.pack(pady=(5, 15), padx=20, anchor="w")
+
     def refresh_data(self):
         user = self.master.user_obj
-        if user and hasattr(user, "comptes") and len(user.comptes) > 0:
+        if user and user.comptes:
             self.label_bienvenue.configure(text=f"Bonjour {user.prenom},")
-
-            solde_cc = user.comptes[0].solde
-            self.label_solde_cc.configure(text=f"{solde_cc:,.2f} €".replace(",", " "))
-
+            self.label_solde_cc.configure(
+                text=f"{user.comptes[0].solde:,.2f} €".replace(",", " ")
+            )
             if len(user.comptes) > 1:
-                solde_annexe = user.comptes[1].solde
                 self.label_solde_annexe.configure(
-                    text=f"{solde_annexe:,.2f} €".replace(",", " ")
+                    text=f"{user.comptes[1].solde:,.2f} €".replace(",", " ")
                 )
 
-            print(f"DEBUG HOME: Dashboard mis à jour pour {user.prenom}")
-        else:
-            print("DEBUG HOME: Données utilisateur manquantes")
-
     def ouvrir_depot(self):
-        dialog = ctk.CTkInputDialog(text="Montant à déposer :", title="Dépôt")
-        montant_saisi = dialog.get_input()
-        if montant_saisi:
+        m = ctk.CTkInputDialog(text="Montant à déposer :", title="Dépôt").get_input()
+        if m:
             try:
-                valeur = float(montant_saisi)
-                # On récupère l'objet compte (qui est une instance de CompteBancaires)
-                compte = self.master.user_obj.comptes[0]
-
-                # On utilise la méthode de ta classe Engine !
-                if compte.effectuer_depot(valeur):
-                    # Pas besoin de faire += valeur ici, ta classe le fait déjà !
+                if self.master.user_obj.comptes[0].effectuer_depot(float(m)):
                     self.refresh_data()
             except ValueError:
                 print("Montant invalide")
 
     def ouvrir_retrait(self):
-        dialog = ctk.CTkInputDialog(text="Montant à retirer :", title="Retrait")
-        montant_saisi = dialog.get_input()
-        if montant_saisi:
+        m = ctk.CTkInputDialog(text="Montant à retirer :", title="Retrait").get_input()
+        if m:
             try:
-                valeur = float(montant_saisi)
-                compte = self.master.user_obj.comptes[0]
-
-                # On utilise la méthode de ta classe Engine !
-                if compte.effectuer_retrait(valeur):
+                if self.master.user_obj.comptes[0].effectuer_retrait(float(m)):
                     self.refresh_data()
             except ValueError:
                 print("Montant invalide")
 
     def ouvrir_virement(self):
-        # Pour un virement interne simple (Courant -> Annexe)
+        """Virement interne Courant -> Annexe"""
         if len(self.master.user_obj.comptes) < 2:
-            print("Action impossible : un seul compte trouvé.")
             return
-
-        dialog = ctk.CTkInputDialog(
-            text="Montant (Courant -> Annexe) :", title="Virement"
-        )
-        montant_saisi = dialog.get_input()
-        if montant_saisi:
+        m = ctk.CTkInputDialog(text="Montant (Interne) :", title="Virement").get_input()
+        if m:
             try:
-                valeur = float(montant_saisi)
-                compte_src = self.master.user_obj.comptes[0]
-                compte_dest = self.master.user_obj.comptes[1]
-
-                # On utilise la méthode de ta classe Engine !
-                if compte_src.effectuer_transfert(valeur, compte_dest):
+                src, dest = (
+                    self.master.user_obj.comptes[0],
+                    self.master.user_obj.comptes[1],
+                )
+                if src.effectuer_transfert(float(m), dest):
                     self.refresh_data()
             except ValueError:
                 print("Montant invalide")
 
-                # --- PRÉPARATION DES DONNÉES PAR DÉFAUT ---
-                date_op = datetime.now().strftime("%Y-%m-%d")
-                id_cat = 1  # ID de catégorie par défaut (ex: 'Transfert')
-                desc = "Virement depuis l'application"
+    def ouvrir_virement_externe(self):
+        """Déclenche l'ouverture de la nouvelle fenêtre de dialogue"""
+        VirementExterneDialog(self, self.traiter_virement_externe)
 
-                # --- CAS INTERNE ---
-                if destinataire.upper() == "ANNEXE":
-                    if len(user.comptes) < 2:
-                        print("Erreur : Aucun compte annexe.")
-                        return
-                    id_beneficiaire = user.comptes[1].id_compte
+    def traiter_virement_externe(self, nom, prenom, montant):
+        """Recherche l'ID par nom et effectue l'opération"""
+        from datamanagement import trouver_id_compte_par_nom
 
-                    # APPEL À TA FONCTION (Attention à l'ordre des arguments !)
-                    virement(
-                        montant, desc, id_cat, date_op, id_emetteur, id_beneficiaire
-                    )
+        print(f"DEBUG: Recherche de {prenom} {nom}...")
+        id_dest = trouver_id_compte_par_nom(nom, prenom)
 
-                    # Mise à jour visuelle locale
-                    user.comptes[0].solde -= montant
-                    user.comptes[1].solde += montant
-                    self.refresh_data()
+        if id_dest is None:
+            print("❌ Erreur: Utilisateur introuvable.")
+            return
 
-                # --- CAS EXTERNE ---
-                else:
-                    id_beneficiaire = int(
-                        destinataire
-                    )  # On suppose que c'est un ID (ex: 14)
+        try:
+            mt = float(montant)
+            compte_source = self.master.user_obj.comptes[0]
 
-                    virement(
-                        montant, desc, id_cat, date_op, id_emetteur, id_beneficiaire
-                    )
-
-                    # Mise à jour visuelle locale
-                    user.comptes[0].solde -= montant
-                    self.refresh_data()
-
-            except ValueError:
-                print("Erreur : Entrez des nombres valides (ID et Montant)")
-            except Exception as e:
-                print(f"Erreur lors du virement : {e}")
+            # Transfert avec ID trouvé
+            if compte_source.effectuer_transfert(
+                mt, id_dest, description=f"Virement à {prenom} {nom}"
+            ):
+                self.refresh_data()
+                print("✅ Virement externe réussi !")
+        except ValueError:
+            print("❌ Erreur: Montant invalide")

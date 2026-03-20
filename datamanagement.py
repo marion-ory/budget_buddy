@@ -191,8 +191,9 @@ def virement(montant, description, id_cat, date_op, id_emetteur, id_beneficiaire
             return True
         except Exception as e:
             print("Une erreur est survenue, veuillez réessayer plus tard")
-            return False
             conn.rollback()
+            return False
+
         finally:
             curseur.close()
             conn.close()
@@ -279,3 +280,43 @@ def recuperer_client_par_banquier(id_banquier):
     curseur.close()
     conn.close()
     return clients
+
+
+def trouver_id_compte_par_nom(nom, prenom):
+    conn = get_connection()
+    if conn:
+        try:
+            curseur = conn.cursor(dictionary=True)
+            n = nom.strip().lower()
+            p = prenom.strip().lower()
+
+            # On cherche (Nom=A AND Prenom=B) OU (Nom=B AND Prenom=A)
+            requete = """
+                SELECT Compte.ID
+                FROM Compte
+                JOIN User ON Compte.ID_User = User.ID
+                WHERE (
+                    (LOWER(User.Nom) = %s AND LOWER(User.Prenom) = %s)
+                    OR
+                    (LOWER(User.Nom) = %s AND LOWER(User.Prenom) = %s)
+                )
+                AND Compte.Type = 'Courant'
+            """
+            # On passe les paramètres dans les deux sens
+            curseur.execute(requete, (n, p, p, n))
+            resultat = curseur.fetchone()
+
+            if resultat:
+                print(f"DEBUG SQL: ID Compte trouvé -> {resultat['ID']}")
+                return resultat["ID"]
+            else:
+                print(f"DEBUG SQL: Aucun compte trouvé pour '{prenom}' '{nom}'")
+                return None
+
+        except Exception as e:
+            print(f"DEBUG SQL: Erreur recherche destinataire : {e}")
+            return None
+        finally:
+            curseur.close()
+            conn.close()
+    return None

@@ -54,31 +54,44 @@ class CompteBancaires:
                 return False
 
     # .        [ OPERATION DE DEBIT ET CREDIT SUR SOLDE DES COMPTES ]
-    def effectuer_transfert(self, montant, compte_destination, description="Transfert"):
+    def effectuer_transfert(self, montant, destination, description="Transfert"):
+        import datetime
+        from datamanagement import virement, historique
 
-        if self.peut_faire_transfert(compte_destination.typecompte):
+        # ID du bénéficiaire
+        # Si c'est un objet (interne), on prend .id, sinon on utilise la valeur directe
+        if hasattr(destination, "id"):
+            id_beneficiaire = destination.id
+            type_dest = destination.typecompte
+        else:
+            id_beneficiaire = int(destination)
+            type_dest = "Externe"  # externe  ok depuis Courant
 
-            if self.calculer_solde() >= montant:
-                from datamanagement import virement
+        if self.peut_faire_transfert(type_dest) or type_dest == "Externe":
 
+            if self.solde >= montant:
                 succes = virement(
                     montant=montant,
                     description=description,
                     id_cat=3,
                     date_op=datetime.date.today(),
                     id_emetteur=self.id,
-                    id_beneficiaire=compte_destination.id,
+                    id_beneficiaire=id_beneficiaire,
                 )
+
                 if succes:
                     print("Transfert autorisé et effectué.")
                     self.solde -= montant
-                    compte_destination.solde += montant
-                    from datamanagement import historique
+
+                    # Si c'est un transfert interne, on met à jour l'objet destination aussi
+                    if hasattr(destination, "solde"):
+                        destination.solde += montant
 
                     historique(self.id)
                     return True
             else:
                 print("Solde insuffisant.")
+        return False
 
     def effectuer_depot(self, montant, description="Depot"):
         if montant > 0:
