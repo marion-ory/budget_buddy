@@ -129,12 +129,12 @@ class CompteBancaires:
 
 
 class Users:
-    def __init__(self, id, id_banquier, nom, prenom, mail, adresse, mdp, role):
+    def __init__(self, id, id_banquier, nom, prenom, email, adresse, mdp, role):
         self.id = id
         self.id_banquier = id_banquier
         self.nom = nom
         self.prenom = prenom
-        self.mail = mail
+        self.email = email
         self.adresse = adresse
         self.mdp = mdp
         self.role = role

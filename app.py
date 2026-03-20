@@ -77,6 +77,8 @@ class BudgetBuddyApp(ctk.CTk):
         if user_info:
             self.current_user = user_info
             self.user_obj = recuperer_client_complet(user_info["ID"])
+            print(f"DEBUG: Type de user_obj -> {type(self.user_obj)}")
+            print(f"DEBUG: Contenu de user_obj -> {self.user_obj}")
             self.page_home.refresh_data()
             return True
         return False

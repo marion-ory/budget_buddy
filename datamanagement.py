@@ -10,33 +10,46 @@ from login import inscription, login
 
 def recuperer_client_complet(id_user):
     conn = get_connection()
-    if conn:
-        try:
-            curseur = conn.cursor(dictionary=True)
-            requete = "SELECT * FROM User WHERE ID =%s"
-            curseur.execute(requete, (id_user,))
-            n = curseur.fetchone()
-            if n:
-                nouveau_client = Client(
-                    n["ID"], n["Nom"], n["Prenom"], n["Email"], None, n["Adresse"]
-                )
+    if not conn:
+        return None
 
-                curseur.execute("SELECT * FROM Compte WHERE ID_User = %s", (id_user,))
-                comptes_sql = curseur.fetchall()
+    try:
+        curseur = conn.cursor(dictionary=True)
+        # On récupère les infos de l'utilisateur
+        curseur.execute("SELECT * FROM User WHERE ID = %s", (id_user,))
+        n = curseur.fetchone()
+
+        if n:
+            # On crée le VÉRITABLE OBJET Client
+            nouveau_client = Client(
+                n["ID"],
+                n["ID_banquier"],
+                n["Nom"],
+                n["Prenom"],
+                n["Email"],
+                n["Adresse"],
+                n["MDP"],
+            )
+
+            # On récupère ses comptes
+            curseur.execute("SELECT * FROM Compte WHERE ID_User = %s", (id_user,))
+            comptes_sql = curseur.fetchall()
 
             for c in comptes_sql:
-
                 compte_obj = CompteBancaires(
                     c["ID"], c["ID_User"], c["Solde"], c["Type"]
                 )
                 nouveau_client.ajouter_compte(compte_obj)
-            return nouveau_client
-        except Exception as e:
-            print("Erreur Profil Client incomplet")
-            conn.rollback()
-        finally:
-            curseur.close()
-            conn.close()
+
+            print(f"DEBUG: Objet créé avec succès pour {nouveau_client.prenom}")
+            return nouveau_client  # <--- ON RENVOIE L'OBJET, PAS LE DICT !
+
+    except Exception as e:
+        print(f"ERREUR dans recuperer_client_complet : {e}")
+        return None
+    finally:
+        curseur.close()
+        conn.close()
 
 
 # --------> Recuperation des comptes  Client et Banquier :
