@@ -47,8 +47,22 @@ class BudgetBuddyApp(ctk.CTk):
         self.show_page(self.page_menu)
 
     def show_page(self, page):
-        # ... (ton code actuel qui cache les pages)
-        page.pack(fill="both", expand=True)
+        # 1. On cache TOUTES les pages d'un coup
+        for p in [
+            self.page_menu,
+            self.page_login,
+            self.page_register,
+            self.page_home,
+            self.page_history,
+        ]:
+            if p:
+                p.pack_forget()
+
+        # 2. On affiche UNIQUEMENT la page demandée
+        # expand=True et fill="both" permettent à la page de prendre TOUTE la place
+        page.pack(expand=True, fill="both")
+
+        # 3. On rafraîchit les données si besoin
         if hasattr(page, "refresh_data"):
             page.refresh_data()
 

@@ -188,8 +188,10 @@ def virement(montant, description, id_cat, date_op, id_emetteur, id_beneficiaire
             curseur.execute(requete, valeurs)
             conn.commit()
             print("Virement pris en compte")
+            return True
         except Exception as e:
             print("Une erreur est survenue, veuillez réessayer plus tard")
+            return False
             conn.rollback()
         finally:
             curseur.close()

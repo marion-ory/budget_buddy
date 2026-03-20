@@ -73,7 +73,10 @@ class CompteBancaires:
                     print("Transfert autorisé et effectué.")
                     self.solde -= montant
                     compte_destination.solde += montant
-                return True
+                    from datamanagement import historique
+
+                    historique(self.id)
+                    return True
             else:
                 print("Solde insuffisant.")
 
@@ -94,7 +97,7 @@ class CompteBancaires:
                 self.solde += montant
                 from datamanagement import historique
 
-                historique(self.id_compte, "Dépôt", montant)
+                historique(self.id)
                 return True
             else:
                 print("Erreur, veuillez aller au guichet")
@@ -113,6 +116,9 @@ class CompteBancaires:
             if succes:
                 print(f"Votre retrait d'un montant de {montant} € a été pris en compte")
                 self.solde -= montant
+                from datamanagement import historique
+
+                historique(self.id)
                 return True
             else:
                 print("Erreur technique lors du retrait.")

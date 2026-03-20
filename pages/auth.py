@@ -47,20 +47,22 @@ class PageLogin(ctk.CTkFrame):
         email = self.entry_email.get().strip()
         mdp = self.entry_mdp.get().strip()
 
-        # 1. On récupère les infos complètes de l'utilisateur
-        user_info = login(email, mdp)
+        # 1. On utilise la fonction de app.py qui fait TOUT le travail
+        # (Vérification MDP + Chargement de l'OBJET avec ses comptes)
+        if self.master.login_user(email, mdp):
 
-        if user_info:
-            # 2. On stocke tout le dictionnaire dans l'application
-            # On utilise .user_obj car c'est ce que PageHome cherche
-            self.master.user_obj = user_info
-
-            # 3. On appelle la bonne fonction de rafraîchissement
+            # 2. Une fois que l'objet est chargé dans self.master.user_obj,
+            # on demande à la page home de se mettre à jour
             self.master.page_home.refresh_data()
 
+            # 3. On affiche la page
             self.master.show_page(self.master.page_home)
         else:
-            self.label_info.configure(text="Email ou mot de passe incorrect")
+            # Petit message d'erreur si ça rate
+            if hasattr(self, "label_info"):
+                self.label_info.configure(text="Email ou mot de passe incorrect")
+            else:
+                print("Erreur : Email ou mot de passe incorrect")
 
 
 class PageRegister(ctk.CTkFrame):
