@@ -185,17 +185,25 @@ class PageHome(ctk.CTkFrame):
             messagebox.showerror("Erreur", "Montant invalide")
 
     def refresh_data(self):
-        """Met à jour l'affichage avec les données réelles de la BDD"""
+        """Met à jour l'affichage avec les données réelles de l'objet Client"""
+        # On récupère l'objet Client stocké dans l'app
         user = self.master.user_obj
+
         if user:
+            # 1. Message de bienvenue (Accès par attribut .prenom)
             self.label_bienvenue.configure(text=f"Bonjour {user.prenom},")
 
-            # Mise à jour Compte Courant
+            # 2. Mise à jour des soldes via la liste de comptes de l'objet
+            # On vérifie qu'il a au moins un compte (le courant)
             if len(user.comptes) > 0:
-                self.label_solde_cc.configure(text=f"{user.comptes[0].solde:.2f} €")
+                solde_cc = user.comptes[0].solde
+                self.label_solde_cc.configure(text=f"{solde_cc:.2f} €")
 
-            # Mise à jour Annexe
+            # 3. Mise à jour du compte épargne (s'il existe)
             if len(user.comptes) > 1:
-                self.label_solde_annexe.configure(text=f"{user.comptes[1].solde:.2f} €")
+                solde_annexe = user.comptes[1].solde
+                self.label_solde_annexe.configure(text=f"{solde_annexe:.2f} €")
+            else:
+                self.label_solde_annexe.configure(text="Aucun compte")
 
-        print("DEBUG: Dashboard rafraîchi avec les données réelles")
+        print("DEBUG: Dashboard rafraîchi avec les objets réels")

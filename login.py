@@ -1,8 +1,11 @@
 import hashlib
 from config import get_connection
 
+# AJOUT : Import des éléments de security.py
+from security import verifications_connexion, traitement_mdp, PEPPER
+
 code_banquier_attendu = "1234"
-PEPPER = "skj§!bafyvdn@co06219!8420§3204§654650"
+# Le PEPPER a été retiré d'ici car il est importé depuis security.py
 
 
 def mdp_conform(mdp):
@@ -47,7 +50,6 @@ def verifier_banquier(code_saisi):
 
 
 def inscription(nom, prenom, email, adresse, mdp, code_b, id_banquier=None):
-
     h_mdp = traitement_mdp(mdp, email)
 
     # verifie code banquier
@@ -59,16 +61,11 @@ def inscription(nom, prenom, email, adresse, mdp, code_b, id_banquier=None):
             try:
                 curseur = conn.cursor()
 
-                # IMPORTANT : On ajoute ID_banquier pour que ton système
-                # de portefeuille banquier fonctionne !
                 requete = """
                     INSERT INTO User (Nom, Prenom, Email, Adresse, MDP, Role, ID_banquier)
                     VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """
-
-                # majuscule pour fitter avec la bdd
                 role_sql = role.capitalize()
-
                 valeurs = (nom, prenom, email, adresse, h_mdp, role_sql, id_banquier)
 
                 curseur.execute(requete, valeurs)
@@ -87,12 +84,22 @@ def login(email, mdp):
     cnx = get_connection()
     if cnx:
         cur = cnx.cursor()
-        cur.execute("SELECT MDP, Role FROM User WHERE Email = %s", (email,))
+        # MODIFICATION : On sélectionne ID, Nom, Prenom pour pouvoir les utiliser dans app.py
+        cur.execute(
+            "SELECT ID, Nom, Prenom, MDP, Role FROM User WHERE Email = %s", (email,)
+        )
         res = cur.fetchone()
         cur.close()
         cnx.close()
 
-        # on ajoute l'email pour la vérification du hash salé
-        if res and verifications_connexion(mdp, res[0], email):
-            return res[1]
+        # res[3] correspond au MDP haché dans la BDD
+        if res and verifications_connexion(mdp, res[3], email):
+            # MODIFICATION : On retourne un dictionnaire complet pour la session de l'app
+            return {
+                "ID": res[0],
+                "Nom": res[1],
+                "Prenom": res[2],
+                "Role": res[4],
+                "Email": email,
+            }
     return None

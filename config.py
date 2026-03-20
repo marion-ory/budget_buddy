@@ -11,7 +11,7 @@ def get_connection():
             user="root",
             password="root",
             database="databank",
-            port=3306,
+            port=8889,
         )
     except mysql.connector.Error as err:
         print(f"Erreur de connexion : {err}")

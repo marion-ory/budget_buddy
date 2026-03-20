@@ -47,21 +47,27 @@ class BudgetBuddyApp(ctk.CTk):
         self.show_page(self.page_menu)
 
     def show_page(self, page):
-        for p in (
+        # On cache TOUTES les pages possibles
+        pages_to_hide = [
             self.page_menu,
             self.page_login,
             self.page_register,
             self.page_home,
             self.page_history,
-        ):
-            p.pack_forget()
+        ]
+        for p in pages_to_hide:
+            if p:
+                p.pack_forget()
 
-        # --- LE REFRESH AUTOMATIQUE ---
-        # On vérifie si la page possède une fonction 'refresh_data'
-        if hasattr(page, "refresh_data"):
-            page.refresh_data()
-
+        # On affiche la page demandée
         page.pack(fill="both", expand=True)
+
+        # On refresh seulement APRÈS le pack
+        if hasattr(page, "refresh_data"):
+            try:
+                page.refresh_data()
+            except Exception as e:
+                print(f"Erreur refresh_data: {e}")
 
     # --- CONNEXION À LA VRAIE BDD ---
     def login_user(self, email, mdp):
@@ -80,9 +86,17 @@ class BudgetBuddyApp(ctk.CTk):
         return inscription(nom, prenom, email, "Adresse par défaut", mdp, code)
 
 
+# if __name__ == "__main__":
+#     print("Vérification de la base de données...")
+#     setup_database()
+
+#     app = BudgetBuddyApp()
+#     app.mainloop()
 if __name__ == "__main__":
     print("Vérification de la base de données...")
-    setup_database()
+    # setup_database()  <-- METS UN # DEVANT POUR TESTER
 
+    print("Création de l'app...")
     app = BudgetBuddyApp()
+    print("Lancement mainloop...")
     app.mainloop()

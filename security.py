@@ -1,4 +1,8 @@
+import hashlib
+
 #           [     SECURITE GENERALE CONNEXION   ]
+
+PEPPER = "MonPoivreSecret123!"
 
 
 def verifications_connexion(mdp_saisi, hask_stocke_bdd, email_user):
