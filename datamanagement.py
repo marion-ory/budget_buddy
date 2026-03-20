@@ -287,10 +287,15 @@ def trouver_id_compte_par_nom(nom, prenom):
     if conn:
         try:
             curseur = conn.cursor(dictionary=True)
+            curseur.execute("SELECT Nom, Prenom FROM User")
+            tous = curseur.fetchall()
+            print(f"DEBUG SQL: Liste réelle en BDD : {tous}")
+            # 1. Nettoyage : on enlève les espaces et on met en minuscule
             n = nom.strip().lower()
             p = prenom.strip().lower()
 
-            # On cherche (Nom=A AND Prenom=B) OU (Nom=B AND Prenom=A)
+            # 2. La requête magique : (Nom=n ET Prenom=p) OU (Nom=p ET Prenom=n)
+            # On cherche spécifiquement le compte 'Courant'
             requete = """
                 SELECT Compte.ID
                 FROM Compte
@@ -302,21 +307,41 @@ def trouver_id_compte_par_nom(nom, prenom):
                 )
                 AND Compte.Type = 'Courant'
             """
-            # On passe les paramètres dans les deux sens
+
+            # On envoie les paramètres dans les deux sens
             curseur.execute(requete, (n, p, p, n))
             resultat = curseur.fetchone()
 
             if resultat:
-                print(f"DEBUG SQL: ID Compte trouvé -> {resultat['ID']}")
+                print(
+                    f"DEBUG SQL: Compte trouvé pour {prenom} {nom} -> ID {resultat['ID']}"
+                )
                 return resultat["ID"]
             else:
-                print(f"DEBUG SQL: Aucun compte trouvé pour '{prenom}' '{nom}'")
+                print(
+                    f"DEBUG SQL: Aucun compte trouvé pour '{prenom}' '{nom}' (Vérifie l'orthographe)"
+                )
                 return None
 
         except Exception as e:
-            print(f"DEBUG SQL: Erreur recherche destinataire : {e}")
+            print(f"DEBUG SQL: Erreur lors de la recherche : {e}")
             return None
         finally:
             curseur.close()
             conn.close()
     return None
+
+
+def recuperer_categories():
+    conn = get_connection()
+    if conn:
+        try:
+            curseur = conn.cursor(dictionary=True)
+            curseur.execute("SELECT * FROM Categorie")
+            return (
+                curseur.fetchall()
+            )  # Retourne une liste de dict [{'ID': 1, 'Nom': 'Alimentaire'}, ...]
+        finally:
+            curseur.close()
+            conn.close()
+    return []

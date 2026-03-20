@@ -11,6 +11,8 @@ import datetime
 #     recuperer_client_par_banquier,
 # )
 
+import datetime
+
 
 class CompteBancaires:
     def __init__(self, id, user_id, solde, typecompte):
@@ -21,9 +23,8 @@ class CompteBancaires:
         self.transactions = []
 
     def calculer_solde(self):
-        # On part du solde enregistré en BDD (ou 0 si tu préfères tout recalculer)
+        """Calcule le solde théorique basé sur la liste des transactions en mémoire."""
         solde_temporaire = self.solde
-
         for t in self.transactions:
             if t.type == "Depot":
                 solde_temporaire += t.montant
@@ -34,16 +35,16 @@ class CompteBancaires:
                     solde_temporaire -= t.montant
                 elif t.beneficiaire == self.id:
                     solde_temporaire += t.montant
-
         return solde_temporaire
 
     def peut_faire_transfert(self, destination_type):
-
+        """Vérifie les règles métier pour les transferts entre comptes."""
         match self.typecompte:
             case "Courant":
                 return True
             case "Annexe":
-                if destination_type == "Courant":  # uniquement vers compte courant
+                # Un compte annexe (épargne) ne peut virer que vers le compte courant
+                if destination_type == "Courant":
                     return True
                 else:
                     print(
@@ -53,37 +54,41 @@ class CompteBancaires:
             case _:
                 return False
 
-    # .        [ OPERATION DE DEBIT ET CREDIT SUR SOLDE DES COMPTES ]
-    def effectuer_transfert(self, montant, destination, description="Transfert"):
-        import datetime
+    # --- OPÉRATIONS DE DÉBIT ET CRÉDIT ---
+
+    def effectuer_transfert(
+        self, montant, destination, description="Transfert", id_cat=3
+    ):
+        """Gère les virements internes (objet destination) et externes (ID destination)."""
         from datamanagement import virement, historique
 
-        # ID du bénéficiaire
-        # Si c'est un objet (interne), on prend .id, sinon on utilise la valeur directe
+        # Déterminer si la destination est un compte interne ou un ID externe
         if hasattr(destination, "id"):
             id_beneficiaire = destination.id
             type_dest = destination.typecompte
         else:
             id_beneficiaire = int(destination)
-            type_dest = "Externe"  # externe  ok depuis Courant
+            type_dest = "Externe"
 
+        # Vérification des droits et du solde
         if self.peut_faire_transfert(type_dest) or type_dest == "Externe":
-
             if self.solde >= montant:
                 succes = virement(
                     montant=montant,
                     description=description,
-                    id_cat=3,
+                    id_cat=id_cat,  # Dynamique depuis l'interface
                     date_op=datetime.date.today(),
                     id_emetteur=self.id,
                     id_beneficiaire=id_beneficiaire,
                 )
 
                 if succes:
-                    print("Transfert autorisé et effectué.")
+                    print(
+                        f" Transfert de {montant}€ vers ID {id_beneficiaire} effectué."
+                    )
                     self.solde -= montant
 
-                    # Si c'est un transfert interne, on met à jour l'objet destination aussi
+                    # Mise à jour de l'objet destination si interne
                     if hasattr(destination, "solde"):
                         destination.solde += montant
 
@@ -93,44 +98,43 @@ class CompteBancaires:
                 print("Solde insuffisant.")
         return False
 
-    def effectuer_depot(self, montant, description="Depot"):
+    def effectuer_depot(self, montant, description="Depot", id_cat=1):
+        """Enregistre un dépôt avec une catégorie spécifique."""
         if montant > 0:
-            from datamanagement import depot
+            from datamanagement import depot, historique
 
             succes = depot(
                 id_compte=self.id,
                 montant=montant,
                 date_op=datetime.date.today(),
                 description=description,
-                id_cat=1,
+                id_cat=id_cat,  # Dynamique depuis l'interface
             )
 
             if succes:
-                print(f"Votre depot {montant} a été pris en compte")
+                print(f" Dépôt de {montant}€ enregistré ({description}).")
                 self.solde += montant
-                from datamanagement import historique
-
                 historique(self.id)
                 return True
             else:
-                print("Erreur, veuillez aller au guichet")
+                print(" Erreur technique lors du dépôt.")
+        return False
 
-    def effectuer_retrait(self, montant, description="Retrait"):
+    def effectuer_retrait(self, montant, description="Retrait", id_cat=2):
+        """Enregistre un retrait avec une catégorie spécifique."""
         if montant > 0 and montant <= self.solde:
-            from datamanagement import retrait
+            from datamanagement import retrait, historique
 
             succes = retrait(
                 id_compte=self.id,
                 montant=montant,
                 description=description,
-                id_cat=2,
+                id_cat=id_cat,  # Dynamique depuis l'interface
                 date_op=datetime.date.today(),
             )
             if succes:
-                print(f"Votre retrait d'un montant de {montant} € a été pris en compte")
+                print(f"Retrait de {montant}€ enregistré ({description}).")
                 self.solde -= montant
-                from datamanagement import historique
-
                 historique(self.id)
                 return True
             else:
@@ -138,9 +142,9 @@ class CompteBancaires:
                 return False
         else:
             if montant > self.solde:
-                print("Solde Insuffisant pour ce retrait.")
+                print("Solde Insuffisant.")
             else:
-                print("Le montant doit être supérieur à 0.")
+                print(" Le montant doit être supérieur à 0.")
             return False
 
 

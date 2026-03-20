@@ -6,7 +6,7 @@ class PageHistory(ctk.CTkFrame):
     def __init__(self, master):
         super().__init__(master, fg_color=st.BG_COLOR)
         self.master = master
-        self.current_account_id = None  # Mémorise quel compte est affiché
+        self.current_account_id = None
 
         # --- TITRE ---
         ctk.CTkLabel(
@@ -64,23 +64,19 @@ class PageHistory(ctk.CTkFrame):
         self.sort_options.pack(side="left", padx=5)
         self.sort_options.set("Plus récent")
 
-        # Container pour les dates (caché par défaut)
+        # Container pour les dates
         self.date_frame = ctk.CTkFrame(self.tool_frame, fg_color="transparent")
-
         self.entry_d1 = ctk.CTkEntry(
             self.date_frame, placeholder_text="AAAA-MM-JJ", width=100
         )
         self.entry_d1.pack(side="left", padx=2)
-
         ctk.CTkLabel(self.date_frame, text="au", text_color=st.TEXT_GRAY).pack(
             side="left", padx=2
         )
-
         self.entry_d2 = ctk.CTkEntry(
             self.date_frame, placeholder_text="AAAA-MM-JJ", width=100
         )
         self.entry_d2.pack(side="left", padx=2)
-
         self.btn_search = ctk.CTkButton(
             self.date_frame,
             text="🔍",
@@ -90,25 +86,22 @@ class PageHistory(ctk.CTkFrame):
         )
         self.btn_search.pack(side="left", padx=5)
 
-        # --- ZONE D'AFFICHAGE (SCROLL) ---
+        # --- ZONE D'AFFICHAGE ---
         self.scroll = ctk.CTkScrollableFrame(
             self, fg_color=st.CARD_BG, corner_radius=st.RADIUS, height=400
         )
         self.scroll.pack(pady=10, padx=20, fill="both", expand=True)
 
-        # --- BOUTON RETOUR ---
         self.btn_back = ctk.CTkButton(
             self,
             text="← Retour à l'accueil",
             fg_color="transparent",
             text_color=st.TEXT_GRAY,
-            hover_color="#333333",
             command=lambda: master.show_page(master.page_home),
         )
         self.btn_back.pack(pady=15)
 
     def changer_tri(self, selection):
-        """Affiche ou cache les champs de date selon le choix"""
         if selection == "Par date":
             self.date_frame.pack(side="left", padx=10)
         else:
@@ -117,7 +110,6 @@ class PageHistory(ctk.CTkFrame):
                 self._afficher_liste(self.current_account_id)
 
     def refresh_data(self):
-        """Réinitialise la page lors de l'accès"""
         self.sort_options.set("Plus récent")
         self.date_frame.pack_forget()
         self.show_compte_courant()
@@ -150,7 +142,6 @@ class PageHistory(ctk.CTkFrame):
         self.clear_scroll()
         self.current_account_id = id_compte_actif
 
-        # 1. Correspondance avec ta fonction trier_par
         mapping = {
             "Plus récent": "date_recent",
             "Catégorie": "categorie",
@@ -162,17 +153,17 @@ class PageHistory(ctk.CTkFrame):
         selection = self.sort_options.get()
         critere = mapping.get(selection, "date_recent")
 
-        # Gestion des dates pour la recherche
-        dates = None
-        if critere == "fourchette_date":
-            d1, d2 = self.entry_d1.get(), self.entry_d2.get()
-            if d1 and d2:
-                dates = (d1, d2)
+        dates = (
+            (self.entry_d1.get(), self.entry_d2.get())
+            if critere == "fourchette_date"
+            else None
+        )
 
-        # 2. Récupération des données
-        from datamanagement import trier_par
+        from datamanagement import trier_par, recuperer_categories
 
+        # On récupère les transactions ET les noms de catégories pour l'affichage
         transactions = trier_par(id_compte_actif, critere, date=dates)
+        categories_dict = {cat["ID"]: cat["Nom"] for cat in recuperer_categories()}
 
         if not transactions:
             ctk.CTkLabel(
@@ -180,38 +171,54 @@ class PageHistory(ctk.CTkFrame):
             ).pack(pady=40)
             return
 
-        # 3. Affichage des lignes
         for t in transactions:
-            # On détermine si c'est un crédit (+) ou débit (-)
             is_credit = t.get("ID_Beneficiaire") == id_compte_actif
+            color = "#2ECC71" if is_credit else "#E74C3C"  # Vert vs Rouge
             prefix = "+" if is_credit else "-"
-            color = st.SUCCESS_GREEN if is_credit else "#FF5555"
 
             row = ctk.CTkFrame(self.scroll, fg_color="transparent")
-            row.pack(fill="x", pady=5, padx=10)
+            row.pack(fill="x", pady=8, padx=10)
 
-            # Colonne Date
-            date_str = str(t.get("Date", "0000-00-00"))[:10]
-            ctk.CTkLabel(row, text=date_str, width=90, text_color=st.TEXT_GRAY).pack(
-                side="left"
+            # 1. Date (Gris discret)
+            date_str = str(t.get("Date", ""))[:10]
+            ctk.CTkLabel(
+                row,
+                text=date_str,
+                width=80,
+                text_color=st.TEXT_GRAY,
+                font=("Arial", 11),
+            ).pack(side="left")
+
+            # 2. Catégorie (Petit badge)
+            id_cat = t.get("ID_Categorie")
+            nom_cat = categories_dict.get(id_cat, "Inconnu")
+            cat_label = ctk.CTkLabel(
+                row,
+                text=nom_cat,
+                width=100,
+                text_color=st.ACCENT_BLUE,
+                font=("Arial", 10, "italic"),
+            )
+            cat_label.pack(side="left", padx=5)
+
+            # 3. Description
+            desc = t.get("Description") or "Opération"
+            ctk.CTkLabel(row, text=desc, anchor="w", font=st.FONT_BODY).pack(
+                side="left", padx=10, expand=True, fill="x"
             )
 
-            # Colonne Description
-            desc = t.get("Description") or t.get("Type", "Opération")
-            ctk.CTkLabel(row, text=desc[:25], width=180, anchor="w").pack(
-                side="left", padx=10
-            )
-
-            # Colonne Montant
+            # 4. Montant
             montant = float(t.get("Montant", 0))
             ctk.CTkLabel(
                 row,
                 text=f"{prefix} {montant:,.2f} €".replace(",", " "),
                 text_color=color,
-                font=st.FONT_MAIN_BOLD,
+                font=("Arial", 14, "bold"),
+                width=100,
+                anchor="e",
             ).pack(side="right", padx=10)
 
-            # Séparateur horizontal
-            ctk.CTkFrame(self.scroll, height=1, fg_color="#2A2A2A").pack(
-                fill="x", padx=15, pady=2
+            # Ligne de séparation
+            ctk.CTkFrame(self.scroll, height=1, fg_color="#333333").pack(
+                fill="x", padx=15
             )
