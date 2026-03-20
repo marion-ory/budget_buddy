@@ -171,11 +171,12 @@ class Client(Users):
     def charger_transactions_client(self):
         from datamanagement import historique
 
+        # On récupère toutes les transactions du client (tous comptes confondus)
         donnees_BDD = historique(self.id)
-        self.transaction = []
+        self.transactions = []  # Utilise le pluriel ici si possible
 
         for ligne in donnees_BDD:
-            nouvelles_transactions = Transaction(
+            t = Transaction(
                 id=ligne["ID"],
                 categorie=ligne["ID_Categorie"],
                 description=ligne["Description"],
@@ -186,16 +187,9 @@ class Client(Users):
                 beneficiaire=ligne["ID_Beneficiaire"],
                 user_id=self.id,
             )
+            self.transactions.append(t)
 
-            self.transaction.append(nouvelles_transactions)
-
-        print(f"HISTORIQUE TRANSACTION :  {len(nouvelles_transactions)}")
-        mon_client = Client(
-            1, "Dupont", "Jean", "jean@mail.com", "mdp123", id_banquier=2
-        )
-        mon_client.charger_transactions_client()
-        solde_actuel = mon_client.calculer_solde()
-        print(f"Votre solde actuel est de {solde_actuel} €")
+        print(f"HISTORIQUE CHARGÉ : {len(self.transactions)} opérations trouvées.")
 
     def afficher_historique_tri(self, critere, dates=None):
         from datamanagement import trier_par
@@ -206,7 +200,7 @@ class Client(Users):
         for ligne in donnees_triees:
             trie = Transaction(
                 id=ligne["ID"],
-                categories=ligne["ID_Categorie"],
+                categorie=ligne["ID_Categorie"],
                 description=ligne["Description"],
                 montant=ligne["Montant"],
                 date=ligne["Date"],
