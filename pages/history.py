@@ -55,74 +55,46 @@ class PageHistory(ctk.CTkFrame):
         self.btn_back.pack(pady=10)
 
     def clear_scroll(self):
-        """Nettoie la zone d'affichage"""
         for child in self.scroll.winfo_children():
             child.destroy()
 
     def refresh_data(self):
-        """Appelée automatiquement lors de l'ouverture de la page"""
         user = self.master.user_obj
         if user:
-            # On charge les données depuis la BDD (méthode de ta classe Client)
+            # On force le rechargement depuis la BDD
             user.charger_transactions_client()
-            # On affiche le compte courant par défaut
             self.show_compte_courant()
 
     def show_compte_courant(self):
-        """Affiche les transactions du compte courant"""
         user = self.master.user_obj
         if not user or not user.comptes:
             return
-
-        # UI : On active le bouton Courant
         self.btn_cc.configure(fg_color=st.ACCENT_BLUE)
         self.btn_annexe.configure(fg_color=st.CARD_BG)
-
-        id_cc = user.comptes[0].id
-        self._afficher_liste(id_cc)
+        self._afficher_liste(user.comptes[0].id)
 
     def show_compte_annexe(self):
-        """Affiche les transactions du compte épargne"""
         user = self.master.user_obj
         if not user or len(user.comptes) < 2:
             self.clear_scroll()
             ctk.CTkLabel(
-                self.scroll,
-                text="Aucun compte épargne disponible.",
-                text_color=st.TEXT_GRAY,
+                self.scroll, text="Aucun compte épargne.", text_color=st.TEXT_GRAY
             ).pack(pady=20)
             return
-
-        # UI : On active le bouton Épargne
         self.btn_cc.configure(fg_color=st.CARD_BG)
         self.btn_annexe.configure(fg_color=st.ACCENT_BLUE)
-
-        id_annexe = user.comptes[1].id
-        self._afficher_liste(id_annexe)
+        self._afficher_liste(user.comptes[1].id)
 
     def _afficher_liste(self, id_compte_actif):
-        """Logique de filtrage et d'affichage des transactions"""
         self.clear_scroll()
-        user = self.master.user_obj
 
-        # 1. En-tête du tableau (Consolas pour un alignement parfait)
-        header = f"{'DATE':<12} | {'DESCRIPTION':<20} | {'TYPE':<12} | {'MONTANT':>10}"
-        ctk.CTkLabel(
-            self.scroll,
-            text=header,
-            font=("Consolas", 13, "bold"),
-            text_color=st.TEXT_GRAY,
-        ).pack(anchor="w", padx=10, pady=(5, 15))
+        # 1. Récupération via ta fonction datamanagement
+        from datamanagement import historique
 
-        # 2. Filtrage des transactions du client pour CE compte
-        transactions_du_compte = [
-            t
-            for t in user.transactions
-            if t.emetteur == id_compte_actif or t.beneficiaire == id_compte_actif
-        ]
+        # On passe l'ID du compte pour avoir ses transactions
+        transactions = historique(id_compte_actif)
 
-        # 3. Message si vide
-        if not transactions_du_compte:
+        if not transactions:
             ctk.CTkLabel(
                 self.scroll,
                 text="Aucune opération sur ce compte.",
@@ -130,9 +102,42 @@ class PageHistory(ctk.CTkFrame):
             ).pack(pady=40)
             return
 
-        # 4. Affichage des lignes (Plus récent en haut)
-        for t in reversed(transactions_du_compte):
-            # L'argent entre si le compte actif est le bénéficiaire
-            is_credit = t.beneficiaire == id_compte_actif
+        # 2. Construction de la liste
+        for t in transactions:
+            # VÉRIFICATION DE LA CASSE SQL :
+            # On utilise les noms exacts de ton CREATE TABLE
+            id_dest = t.get("ID_Beneficiaire")
+            is_credit = id_dest == id_compte_actif
 
-            color = st.SUCCESS_
+            prefix = "+" if is_credit else "-"
+            color = st.SUCCESS_GREEN if is_credit else "#FF5555"
+
+            # Création de la ligne (Frame)
+            row = ctk.CTkFrame(self.scroll, fg_color="transparent")
+            row.pack(fill="x", pady=8, padx=15)
+
+            # Date (Formatée proprement)
+            date_val = t.get("Date", "00-00-0000")
+            ctk.CTkLabel(
+                row, text=str(date_val), width=100, text_color=st.TEXT_GRAY
+            ).pack(side="left")
+
+            # Description (ou Type si vide)
+            desc_text = t.get("Description") or t.get("Type", "Transaction")
+            ctk.CTkLabel(row, text=desc_text, width=200, anchor="w").pack(
+                side="left", padx=15
+            )
+
+            # Montant
+            mt_val = float(t.get("Montant", 0))
+            ctk.CTkLabel(
+                row,
+                text=f"{prefix} {mt_val:,.2f} €".replace(",", " "),
+                text_color=color,
+                font=st.FONT_MAIN_BOLD,
+            ).pack(side="right", padx=10)
+
+            # Petite ligne de séparation subtile
+            ctk.CTkFrame(self.scroll, height=1, fg_color="#333333").pack(
+                fill="x", padx=20
+            )
