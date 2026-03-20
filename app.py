@@ -47,49 +47,29 @@ class BudgetBuddyApp(ctk.CTk):
         self.show_page(self.page_menu)
 
     def show_page(self, page):
-        # On cache TOUTES les pages possibles
-        pages_to_hide = [
-            self.page_menu,
-            self.page_login,
-            self.page_register,
-            self.page_home,
-            self.page_history,
-        ]
-        for p in pages_to_hide:
-            if p:
-                p.pack_forget()
-
-        # On affiche la page demandée
+        # ... (ton code actuel qui cache les pages)
         page.pack(fill="both", expand=True)
-
-        # On refresh seulement APRÈS le pack
         if hasattr(page, "refresh_data"):
-            try:
-                page.refresh_data()
-            except Exception as e:
-                print(f"Erreur refresh_data: {e}")
+            page.refresh_data()
 
-    # --- CONNEXION À LA VRAIE BDD ---
+    # --- CONNEXION À LA VRAIE BDD (Vérifie bien l'alignement ici !) ---
     def login_user(self, email, mdp):
-        # On utilise la fonction de Manu
+        # 1. On vérifie les identifiants via Manu
         user_info = login(email, mdp)
 
         if user_info:
-            self.current_user = user_info
+            # On récupère l'ID
+            user_id = user_info.get("id") or user_info.get("ID")
 
-            # CORRECTION : Utilise "id" en minuscule car c'est ce que renvoie ton login.py
-            self.user_obj = recuperer_client_complet(user_info["id"])
+            # 2. On transforme le dict en OBJET Client (via datamanagement)
+            self.user_obj = recuperer_client_complet(user_id)
 
-            # SÉCURITÉ : On force le chargement des comptes si ce n'est pas fait dans la fonction précédente
             if self.user_obj:
-                # Si tu as bien ajouté ces méthodes dans ta classe Client (engine.py) :
-                self.user_obj.charger_comptes()
-                self.user_obj.charger_transactions_client()
-
+                # IMPORTANT : On lie l'objet à l'application
+                # La page home pourra alors lire self.master.user_obj
                 print(
-                    f"DEBUG: {self.user_obj.prenom} connecté avec {len(self.user_obj.comptes)} comptes."
+                    f"DEBUG APP: {self.user_obj.prenom} chargé avec {len(self.user_obj.comptes)} comptes."
                 )
-                self.page_home.refresh_data()
                 return True
 
         return False

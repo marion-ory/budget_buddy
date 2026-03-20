@@ -232,32 +232,15 @@ class PageHome(ctk.CTkFrame):
         except ValueError:
             messagebox.showerror("Erreur", "Veuillez entrer un nombre valide.")
 
-    def refresh_data(self):
-        user = self.master.user_obj
-        if not user:
-            return
 
-        # 1. Gestion du Prénom (Déjà OK)
-        prenom = (
-            getattr(user, "prenom", "Client")
-            if not isinstance(user, dict)
-            else user.get("Prenom", "Client")
-        )
-        self.label_bienvenue.configure(text=f"Bonjour {prenom},")
+def refresh_data(self):
+    # C'est ICI que le lien se fait avec app.py
+    user = self.master.user_obj
 
-        # 2. Mise à jour des soldes
-        try:
-            if hasattr(user, "comptes") and len(user.comptes) > 0:
-                # Compte Courant (Index 0)
-                self.label_solde_cc.configure(text=f"{user.comptes[0].solde:.2f} €")
-
-                # Compte Épargne (Index 1) - SI IL EXISTE
-                if len(user.comptes) > 1:
-                    self.label_solde_annexe.configure(
-                        text=f"{user.comptes[1].solde:.2f} €"
-                    )
-                else:
-                    self.label_solde_annexe.configure(text="Pas de compte")
-
-        except Exception as e:
-            print(f"DEBUG: Erreur affichage soldes : {e}")
+    if user and hasattr(user, "comptes") and len(user.comptes) > 0:
+        # On prend le premier compte (souvent le Courant)
+        solde_a_afficher = user.comptes[0].solde
+        self.label_solde_cc.configure(text=f"{solde_a_afficher:.2f} €")
+        print(f"DEBUG HOME: Affichage du solde -> {solde_a_afficher}")
+    else:
+        print("DEBUG HOME: Aucun compte trouvé pour l'affichage")
