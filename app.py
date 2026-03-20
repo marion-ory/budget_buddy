@@ -71,21 +71,28 @@ class BudgetBuddyApp(ctk.CTk):
 
     # --- CONNEXION À LA VRAIE BDD ---
     def login_user(self, email, mdp):
-        # On utilise la fonction de Manu qui cherche en BDD
+        # On utilise la fonction de Manu
         user_info = login(email, mdp)
 
         if user_info:
             self.current_user = user_info
-            self.user_obj = recuperer_client_complet(user_info["ID"])
-            print(f"DEBUG: Type de user_obj -> {type(self.user_obj)}")
-            print(f"DEBUG: Contenu de user_obj -> {self.user_obj}")
-            self.page_home.refresh_data()
-            return True
-        return False
 
-    def register_user(self, nom, prenom, email, mdp, code=""):
-        # On utilise la fonction d'inscription SQL
-        return inscription(nom, prenom, email, "Adresse par défaut", mdp, code)
+            # CORRECTION : Utilise "id" en minuscule car c'est ce que renvoie ton login.py
+            self.user_obj = recuperer_client_complet(user_info["id"])
+
+            # SÉCURITÉ : On force le chargement des comptes si ce n'est pas fait dans la fonction précédente
+            if self.user_obj:
+                # Si tu as bien ajouté ces méthodes dans ta classe Client (engine.py) :
+                self.user_obj.charger_comptes()
+                self.user_obj.charger_transactions_client()
+
+                print(
+                    f"DEBUG: {self.user_obj.prenom} connecté avec {len(self.user_obj.comptes)} comptes."
+                )
+                self.page_home.refresh_data()
+                return True
+
+        return False
 
 
 # if __name__ == "__main__":

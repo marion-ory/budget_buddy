@@ -36,13 +36,24 @@ def recuperer_client_complet(id_user):
             comptes_sql = curseur.fetchall()
 
             for c in comptes_sql:
+                # 1. On convertit d'abord
+                solde_propre = float(c["Solde"])
+
+                print(
+                    f"DEBUG SQL: Lecture du compte {c['Type']} | Solde: {solde_propre}€"
+                )
+
+                # 2. On passe 'solde_propre' à l'objet !
                 compte_obj = CompteBancaires(
-                    c["ID"], c["ID_User"], c["Solde"], c["Type"]
+                    id=c["ID"],
+                    user_id=c["ID_User"],
+                    solde=solde_propre,
+                    typecompte=c["Type"],
                 )
                 nouveau_client.ajouter_compte(compte_obj)
 
             print(f"DEBUG: Objet créé avec succès pour {nouveau_client.prenom}")
-            return nouveau_client  # <--- ON RENVOIE L'OBJET, PAS LE DICT !
+            return nouveau_client
 
     except Exception as e:
         print(f"ERREUR dans recuperer_client_complet : {e}")
@@ -60,9 +71,10 @@ def charger_comptes_utilisateurs(id_user):
     if conn:
         try:
             curseur = conn.cursor(dictionary=True)
-            requete = "SELECT * FROM Compte WHERE ID = %s"
+            requete = "SELECT * FROM Compte WHERE ID_User= %s"
             curseur.execute(requete, (id_user,))
             listes_comptes = curseur.fetchall()  # recupere la liste de compte
+            return listes_comptes
         except Exception as e:
             print("Erreur de chargement des comptes")
             conn.rollback()

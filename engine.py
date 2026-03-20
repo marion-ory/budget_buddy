@@ -168,28 +168,30 @@ class Client(Users):
 
         retrait(self.id, montant, description, id_cat, date_op)
 
-    def charger_transactions_client(self):
-        from datamanagement import historique
+    def charger_comptes(self):
+        """Récupère les comptes en BDD et les transforme en objets CompteBancaires"""
+        from datamanagement import charger_comptes_utilisateurs
 
-        # On récupère toutes les transactions du client (tous comptes confondus)
-        donnees_BDD = historique(self.id)
-        self.transactions = []  # Utilise le pluriel ici si possible
+        # On récupère les dictionnaires SQL (ceux avec ID_User)
+        donnees_sql = charger_comptes_utilisateurs(self.id)
+        self.comptes = []
 
-        for ligne in donnees_BDD:
-            t = Transaction(
-                id=ligne["ID"],
-                categorie=ligne["ID_Categorie"],
-                description=ligne["Description"],
-                montant=ligne["Montant"],
-                date=ligne["Date"],
-                type=ligne["Type"],
-                emetteur=ligne["ID_Emetteur"],
-                beneficiaire=ligne["ID_Beneficiaire"],
-                user_id=self.id,
+        for c in donnees_sql:
+
+            nouveau_compte = CompteBancaires(
+                id=c["ID"],
+                user_id=c["ID_User"],
+                solde=float(c["Solde"]),
+                type_compte=c["Type"],
             )
-            self.transactions.append(t)
+            self.comptes.append(nouveau_compte)
 
-        print(f"HISTORIQUE CHARGÉ : {len(self.transactions)} opérations trouvées.")
+        print(f" {len(self.comptes)} comptes chargés pour {self.prenom}")
+
+    def initialiser_donnees(self):
+        """Charge TOUT : comptes et transactions d'un coup"""
+        self.charger_comptes()
+        self.charger_transactions_client()
 
     def afficher_historique_tri(self, critere, dates=None):
         from datamanagement import trier_par

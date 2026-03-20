@@ -1,12 +1,10 @@
 import hashlib
 from config import get_connection
-
 # AJOUT : Import des éléments de security.py
 from security import verifications_connexion, traitement_mdp, PEPPER
 
 code_banquier_attendu = "1234"
 # Le PEPPER a été retiré d'ici car il est importé depuis security.py
-
 
 def mdp_conform(mdp):
     if len(mdp) < 10:
@@ -23,18 +21,15 @@ def mdp_conform(mdp):
             a_special = True
     return a_majuscule and a_minuscule and a_chiffre and a_special
 
-
 def code_banquier_valide(code_secret):
     if not code_secret:
         return True
     return code_secret.isdigit() and len(code_secret) == 4
 
-
 # hash du code banquier (on utilise le poivre pour être cohérent)
 hash_banquier_cible = hashlib.sha256(
     (PEPPER + code_banquier_attendu).encode("utf-8")
 ).hexdigest()
-
 
 def verifier_banquier(code_saisi):
     if not code_saisi:
@@ -47,7 +42,6 @@ def verifier_banquier(code_saisi):
         return "Banquier"
     else:
         return "erreur_code"
-
 
 def inscription(nom, prenom, email, adresse, mdp, code_b, id_banquier=None):
     h_mdp = traitement_mdp(mdp, email)
@@ -79,15 +73,12 @@ def inscription(nom, prenom, email, adresse, mdp, code_b, id_banquier=None):
                 conn.close()
     return False
 
-
 def login(email, mdp):
     cnx = get_connection()
     if cnx:
         cur = cnx.cursor()
         # MODIFICATION : On sélectionne ID, Nom, Prenom pour pouvoir les utiliser dans app.py
-        cur.execute(
-            "SELECT ID, Nom, Prenom, MDP, Role FROM User WHERE Email = %s", (email,)
-        )
+        cur.execute("SELECT ID, Nom, Prenom, MDP, Role FROM User WHERE Email = %s", (email,))
         res = cur.fetchone()
         cur.close()
         cnx.close()
@@ -95,11 +86,5 @@ def login(email, mdp):
         # res[3] correspond au MDP haché dans la BDD
         if res and verifications_connexion(mdp, res[3], email):
             # MODIFICATION : On retourne un dictionnaire complet pour la session de l'app
-            return {
-                "ID": res[0],
-                "Nom": res[1],
-                "Prenom": res[2],
-                "Role": res[4],
-                "Email": email,
-            }
+            return {"id": res[0], "nom": res[1], "prenom": res[2], "role": res[4], "email": email}
     return None
