@@ -39,9 +39,9 @@ Possibilité pour le banquier d'effectuer des opérations au nom du client.
     🛠️ Compétences Techniques
     
 
-Langage : Python 3.x
+Langage : Python SQL
 
-Interface Graphique : Pygame / Tkinter / PyQt (à adapter selon ton choix)
+Interface Graphique : Tkinter 
 
 Base de données : SQL (SQLite ou PostgreSQL)
 
