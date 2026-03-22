@@ -415,12 +415,7 @@ def trouver_banquier_disponible():
             """)
             resultat = curseur.fetchone()
             if resultat:
-                return resultat["ID_banquier"]
-            else:
-                # Si aucun client encore, prendre le premier banquier disponible
-                curseur.execute("SELECT ID FROM User WHERE Role = 'Banquier' LIMIT 1")
-                banquier = curseur.fetchone()
-                return banquier["ID"] if banquier else None
+                return resultat["ID"]
         except Exception as e:
             print(f"Erreur recherche banquier : {e}")
             return None

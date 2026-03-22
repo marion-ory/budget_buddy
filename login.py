@@ -24,6 +24,7 @@ def inscription(nom, prenom, email, adresse, mdp, code_b, id_banquier=None):
                 if role == "Client" and id_banquier is None:
                     from datamanagement import trouver_banquier_disponible
                     id_banquier = trouver_banquier_disponible()
+                    print(f"DEBUG inscription: banquier trouvé = {id_banquier}")
 
                 requete = """
                     INSERT INTO User (Nom, Prenom, Email, Adresse, MDP, Role, ID_banquier)
