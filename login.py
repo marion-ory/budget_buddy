@@ -1,4 +1,3 @@
-import hashlib
 from config import get_connection
 # AJOUT : Import des éléments de security.py
 from security import verifications_connexion, traitement_mdp, verifier_banquier, PEPPER

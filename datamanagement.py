@@ -405,10 +405,11 @@ def trouver_banquier_disponible():
         try:
             curseur = conn.cursor(dictionary=True)
             curseur.execute("""
-                SELECT ID_banquier, COUNT(*) as nb_clients
+                SELECT User.ID, COUNT(Client.ID) as nb_clients
                 FROM User
-                WHERE Role = 'Client' AND ID_banquier IS NOT NULL
-                GROUP BY ID_banquier
+                LEFT JOIN User AS Client ON Client.ID_banquier = User.ID
+                WHERE User.Role = 'Banquier'
+                GROUP BY User.ID
                 ORDER BY nb_clients ASC
                 LIMIT 1
             """)
